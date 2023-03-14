@@ -65,7 +65,7 @@ async fn get_index(scylla: Data<Session>) -> actix_web::Result<impl Responder> {
         strings.push(node.to_string());
     }
 
-    Ok(HttpResponse::Ok().body(format!("{}", strings.join("<br />"))))
+    Ok(HttpResponse::Ok().body(strings.join("<br />")))
 }
 
 #[get("/forums/{node_id}")]
@@ -82,7 +82,7 @@ async fn get_forum(
         strings.push(node.to_string());
     }
 
-    Ok(HttpResponse::Ok().body(format!("{}", strings.join("<br />"))))
+    Ok(HttpResponse::Ok().body(strings.join("<br />")))
 }
 
 #[get("/threads/{thread_id}")]
@@ -105,5 +105,5 @@ async fn get_thread(
         }
     }
 
-    Ok(HttpResponse::Ok().body(format!("{}", strings.join("<hr />"))))
+    Ok(HttpResponse::Ok().body(strings.join("<hr />")))
 }

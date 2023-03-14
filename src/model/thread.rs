@@ -40,11 +40,6 @@ impl Thread {
 
 impl std::fmt::Display for Thread {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "<a href=\"{}\">{}</a>",
-            format!("/threads/{}", self.id),
-            self.title
-        )
+        write!(f, "<a href=\"/threads/{}\">{}</a>", self.id, self.title)
     }
 }

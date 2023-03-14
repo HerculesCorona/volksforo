@@ -36,11 +36,6 @@ impl Node {
 
 impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "<a href=\"{}\">{}</a>",
-            format!("/forums/{}", self.id),
-            self.title
-        )
+        write!(f, "<a href=\"/forums/{}\">{}</a>", self.id, self.title)
     }
 }
