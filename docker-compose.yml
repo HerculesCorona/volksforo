@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  scylla:
+    image: scylladb/scylla:5.2.0-rc0
+    container_name: vf_scylla
+    command: --smp 8
+    ports:
+      - 9042:9042 # native CQL
+      - 9142:9142 # over SSL
+      - 10000:10000 # REST API
+      - 9100:9100 # node explorer
+      - 9160:9160 # thrift
+      - 19042:19042 # shard-aware native CQL
+      - 19142:19142 # shard-aware native CQL
+    volumes:
+      - db:/var/lib/scylla
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "cqlsh",
+          #"-u cassandra",
+        #"-p cassandra",
+          "-e describe keyspaces"
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  volskforo:
+    build: .
+    container_name: volksforo
+    environment:
+      - RUST_BACKTRACE=1
+      - VF_DB_URI=scylla:9042
+    ports:
+      - 8080:8080
+
+volumes:
+  db:
+    driver: local

@@ -1,0 +1,21 @@
+[package]
+name = "volksforo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"     # Actix
+anyhow = "1.0"      # Result<> development ease
+askama = { version = "0", features = ["with-actix-web"] } # Templating
+bitflags = "1"      # Bitmap structs (permission system)
+chrono = "0.4"      # Time (Scylla co-dependency)
+dashmap = "5"       # Concurrent associative arrays (permission system)
+dotenv = "0"        # Environmental variables
+env_logger = "0.10" # 
+log = "0.4"         # Logging macros
+rs-snowflake = "0"  # Snowflake
+scylla = "0"        # ScyllaDB
+tokio = { version = "1.26", features = ["rt-multi-thread", "macros"] }
+uuid = "1"          # UUID (Scylla compatible)
+
+[dev-dependencies]
