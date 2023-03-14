@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+
+<head>
+    {% block head %}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'nonce-{{ context.get_nonce() }}'" />
+
+    <title>{% block title %}るふろ{% endblock %}</title>
+
+    <script type="module" nonce="{{ context.get_nonce() }}">
+        document.documentElement.classList.remove('no-js');
+        document.documentElement.classList.add('js');
+    </script>
+
+    {% block stylesheets %}
+    <link rel="stylesheet" type="text/css" href="/public/assets/style.css" nonce="{{ context.get_nonce() }}" />
+    {#
+    <link rel="stylesheet" type="text/css" href="/public/assets/print.css" media="print"
+        nonce="{{ context.get_nonce() }}" /> #}
+    {% endblock %}
+
+    {# These are very important for SEO.
+    <meta name="description" content="Page description" />
+    <meta property="og:title" content="Unique page title - My Site" />
+    <meta property="og:description" content="Page description" />
+    <meta property="og:image" content="https://www.mywebsite.com/image.jpg" />
+    <meta property="og:image:alt" content="Image description" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:url" content="https://www.mywebsite.com/page" />
+    <link rel="canonical" href="https://www.mywebsite.com/page" />
+    #}
+
+    {# More advanced templating options that will come later.
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/my.webmanifest" />
+    #}
+    <meta name="theme-color" content="#B7410E" />
+    {% endblock %}
+</head>
+
+<body>
+    {% block top %}
+    <header>
+        {% block header %}
+        <nav id="primary-nav">
+            <div class="container header-inner">
+                <a href="/" class="brand">ruforo</a>
+            </div>
+            <div class="container">
+                {% block navigation %}
+                <ul class="nav-main">
+                    <li><a href="/forums" class="nav-link">Forums</a></li>
+                    <li><a href="/chat" class="nav-link">Chat</a></li>
+                    <li><a href="/members" class="nav-link">Members</a></li>
+                </ul>
+                <ul class="nav-side">
+                    <li><a href="/create_user" class="nav-link">Register</a></li>
+                    <li><a href="/login" class="nav-link">Login</a></li>
+                </ul>
+                {% endblock %}
+            </div>
+        </nav>
+        {% endblock %}
+    </header>
+    {% endblock %}
+
+    {% block main %}
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    {% endblock %}
+
+    {% block bottom %}
+    <footer class="container">
+        <div class="footer-inner">
+            {% block footer %}
+            <p>🐍 Live Free or Die</p>
+            <p>Generated in {{ context.request_time_as_string() }}</p>
+            {% endblock %}
+        </div>
+    </footer>
+    {% endblock %}
+
+    {% block lazyjs %}
+    <script src="/public/assets/main.js" type="module" nonce="{{ context.get_nonce() }}"></script>
+    {% endblock %}
+</body>
+
+</html>

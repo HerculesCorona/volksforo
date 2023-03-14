@@ -1,0 +1,33 @@
+{% extends "container/public.html" %}
+
+{% block content %}
+<div class="struct-container">
+    {% if nodes.len() > 0 %}
+    {% for node in nodes %}
+    <div class="struct-item struct-item--node" data-id="{{ node.id }}">
+        <div class="struct-item-cell struct-item-cell--icon struct-item-cell--iconStart"></div>
+        <div class="struct-item-cell struct-item-cell--main">
+            <a href="/node/{{ node.id }}/">{{ node.title }}</a><br />
+            {% if let Some(description) = node.description %}{{ description }}<br />{% endif %}
+        </div>
+        {#
+        <div class="struct-item-cell struct-item-cell--meta">
+            <dl>
+                <dt>Replies:</dt>
+                <dd>{{ thread.post_count }}</dd>
+            </dl>
+            <dl>
+                <dt>Views:</dt>
+                <dd>{{ thread.view_count }}</dd>
+            </dl>
+        </div>
+        #}
+        <div class="struct-item-cell struct-item-cell--latest"></div>
+        <div class="struct-item-cell struct-item-cell--icon struct-item-cell--iconEnd"></div>
+    </div>
+    {% endfor %}
+    {% else %}
+    No nodes available.
+    {% endif %}
+</div>
+{% endblock %}

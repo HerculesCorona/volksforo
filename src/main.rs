@@ -1,10 +1,28 @@
+//
+// ^77        !~         .?7         :?!          :7!
+// ~@@?      7@^         ~@#.        !@#        .5J?^
+//  7@&:    :&7   :^:.   ^@#.   ..   !@B    ..  P@!     :^:     .  ..    :^:.
+//   5@G    G5  !JYPB&5: ~@#. ~??GB7 !@B  ^5Y: !&@5! .7J5P##J  7&P?#B^ !JYP##5.
+//   .#@?  JB  P#.  .5@G ~@# ^@G^^7^ !@B:Y5~    B@! :#5   ^#@? J@B.~^.PB.  .P@P
+//    ~@@^^&^ ~@P    ^@P ~@#  7G##P! 7@#G@5.    B@! Y@7    ?@7 J@5   !@5    ^@5
+//     Y@B#7  ^&@J:..?#^ !@# .7?:!@B 7@B.?&@J:  #@7 ?@&7:..PP  Y@P   ^@@J:..J#:
+//     .GBY    ^5##GY!.  ~BP .Y#P??: !B5  .Y#Y. 5B~  !G#BP?~   ?BJ    ^5#BGJ!.
+//
+
 extern crate log;
 
 mod controller;
+mod middleware;
 mod model;
+mod view;
 
+use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_web::cookie::Key;
+use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use middleware::context::Context;
+use rand::{distributions::Alphanumeric, Rng};
 use scylla::{Session, SessionBuilder};
 use snowflake::SnowflakeIdBucket;
 use std::env;
@@ -43,6 +61,19 @@ async fn main() -> std::io::Result<()> {
             .expect("Unable to connect to ScyllaDB"),
     );
 
+    let secret_key = match std::env::var("VF_SESSION_KEY") {
+        Ok(key) => Key::from(key.as_bytes()),
+        Err(err) => {
+            let random_string: String = rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(128)
+                .map(char::from)
+                .collect();
+            println!("VF_SESSION_KEY was invalid. Reason: {:?}\r\nThis means the key used for signing session cookies will invalidate every time the application is restarted. A secret key must be at least 64 bytes to be accepted.\r\n\r\nNeed a key? How about:\r\n{}", err, random_string);
+            Key::from(random_string.as_bytes())
+        }
+    };
+
     // Start webserver
     HttpServer::new(move || {
         App::new()
@@ -51,6 +82,12 @@ async fn main() -> std::io::Result<()> {
             .service(get_index)
             .service(get_forum)
             .service(get_thread)
+            .wrap(Context::default())
+            .wrap(SessionMiddleware::new(
+                CookieSessionStore::default(),
+                secret_key.clone(),
+            ))
+            .wrap(Logger::new("%a %{User-Agent}i"))
     })
     .bind(env::var("VF_APP_BIND").expect("VF_APP_BIND is unset"))?
     .run()
@@ -58,14 +95,10 @@ async fn main() -> std::io::Result<()> {
 }
 
 #[get("/")]
-async fn get_index(scylla: Data<Session>) -> actix_web::Result<impl Responder> {
-    let nodes = self::model::Node::fetch_all(scylla).await.unwrap();
-    let mut strings = Vec::with_capacity(nodes.len());
-    for node in nodes {
-        strings.push(node.to_string());
-    }
-
-    Ok(HttpResponse::Ok().body(strings.join("<br />")))
+async fn get_index(context: Context, scylla: Data<Session>) -> actix_web::Result<impl Responder> {
+    use self::model::Node;
+    let nodes = Node::fetch_all(scylla).await.unwrap();
+    Ok(self::view::IndexTemplate { context, nodes })
 }
 
 #[get("/forums/{node_id}")]
