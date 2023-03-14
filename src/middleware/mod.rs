@@ -4,3 +4,4 @@
 // https://github.com/actix/actix-extras/tree/master/actix-session/src
 
 pub mod context;
+pub use context::Context;

@@ -1,4 +1,5 @@
 pub mod asset;
+pub mod error;
 pub mod forum;
 pub mod thread;
 

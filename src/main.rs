@@ -18,7 +18,8 @@ mod view;
 
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::cookie::Key;
-use actix_web::middleware::Logger;
+use actix_web::http::StatusCode;
+use actix_web::middleware::{ErrorHandlers, Logger};
 use actix_web::web::Data;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use middleware::context::Context;
@@ -87,6 +88,16 @@ async fn main() -> std::io::Result<()> {
                 CookieSessionStore::default(),
                 secret_key.clone(),
             ))
+            .wrap(
+                ErrorHandlers::new()
+                    .handler(StatusCode::BAD_REQUEST, controller::error::render_400)
+                    .handler(StatusCode::FORBIDDEN, controller::error::render_403)
+                    .handler(StatusCode::NOT_FOUND, controller::error::render_404)
+                    .handler(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        controller::error::render_500,
+                    ),
+            )
             .wrap(Logger::new("%a %{User-Agent}i"))
             .configure(controller::configure)
     })
