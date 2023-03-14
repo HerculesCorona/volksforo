@@ -88,6 +88,7 @@ async fn main() -> std::io::Result<()> {
                 secret_key.clone(),
             ))
             .wrap(Logger::new("%a %{User-Agent}i"))
+            .configure(controller::configure)
     })
     .bind(env::var("VF_APP_BIND").expect("VF_APP_BIND is unset"))?
     .run()
@@ -101,7 +102,7 @@ async fn get_index(context: Context, scylla: Data<Session>) -> actix_web::Result
     Ok(self::view::IndexTemplate { context, nodes })
 }
 
-#[get("/forums/{node_id}")]
+#[get("/forums/{node_id}/")]
 async fn get_forum(
     scylla: Data<Session>,
     path: web::Path<i64>,
@@ -118,7 +119,7 @@ async fn get_forum(
     Ok(HttpResponse::Ok().body(strings.join("<br />")))
 }
 
-#[get("/threads/{thread_id}")]
+#[get("/threads/{thread_id}/")]
 async fn get_thread(
     scylla: Data<Session>,
     path: web::Path<i64>,

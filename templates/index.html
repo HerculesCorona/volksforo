@@ -7,7 +7,7 @@
     <div class="struct-item struct-item--node" data-id="{{ node.id }}">
         <div class="struct-item-cell struct-item-cell--icon struct-item-cell--iconStart"></div>
         <div class="struct-item-cell struct-item-cell--main">
-            <a href="/node/{{ node.id }}/">{{ node.title }}</a><br />
+            <a href="/forums/{{ node.id }}/">{{ node.title }}</a><br />
             {% if let Some(description) = node.description %}{{ description }}<br />{% endif %}
         </div>
         {#

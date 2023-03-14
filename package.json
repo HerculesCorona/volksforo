@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "filepond": "^4.30",
+    "hash-wasm": "^4.9",
+    "micromodal": "^0.4"
+  },
+  "devDependencies": {
+    "css-loader": "^6.7",
+    "mini-css-extract-plugin": "^2.6",
+    "sass": "^1.59",
+    "sass-loader": "^13.2",
+    "style-loader": "^3.3",
+    "swc-loader": "^0.2",
+    "webpack": "^5.76",
+    "webpack-cli": "^5.0.1"
+  }
+}
