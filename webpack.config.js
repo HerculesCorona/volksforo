@@ -34,7 +34,7 @@ module.exports = {
     },
     entry: {
         main: path.resolve(__dirname, './resources/js/chat.js'),
-        style: path.resolve(__dirname, './resources/css/main.scss'),
+        style: path.resolve(__dirname, './resources/sass/main.scss'),
     },
     output: {
         path: path.resolve(__dirname, './public/assets'),

@@ -1,3 +1,4 @@
+pub mod account;
 pub mod asset;
 pub mod error;
 pub mod node;
@@ -9,6 +10,7 @@ pub mod thread;
 pub fn configure(conf: &mut actix_web::web::ServiceConfig) {
     // Descending order. Order is important.
     // Route resolution will stop at the first match.
+    account::configure(conf);
     asset::configure(conf);
     node::configure(conf);
     thread::configure(conf);

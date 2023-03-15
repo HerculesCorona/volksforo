@@ -20,8 +20,22 @@
     --button-danger-background-hover: rgb(161, 45, 47);
 
     --scrollbar-thumb: rgb(204, 204, 204);
+
+
+    --error-background: rgb(253, 233, 233);
+    --error-border-color: rgb(200, 68, 72);
+    --error-color: rgb(200, 68, 72);
+
+    --success-background: rgb(218, 243, 216);
+    --success-border-color: rgb(99, 178, 101);
+    --success-color: rgb(61, 121, 63);
+
+    --warning-background: rgb(251, 247, 226);
+    --warning-border-color: rgb(220, 218, 84);
+    --warning-color: rgb(132, 101, 61);
 }
 
+//@media (prefers-color-scheme: dark) {
 body.style-dark {
     --background-color: rgb(54, 57, 63);
     --border-color: rgba(79, 84, 92, 0.48);

@@ -19,8 +19,10 @@ env_logger = "0.10"  #
 futures-util = "0.3" # Actix Middleware
 log = "0.4"          # Logging macros
 rand = "0.8"
-rs-snowflake = "0"   # Snowflake
+rs-snowflake = "0"   # Snowflake IDs for all 'serialized' int64 in Scylla
+rust-argon2 = "1"         # Password encryption
 scylla = "0"         # ScyllaDB
+serde = { version = "1.0", features = ["derive"] } # [De]serialization and Actix forms
 tokio = { version = "1.26", features = ["rt-multi-thread", "macros"] }
 uuid = "1"           # UUID (Scylla compatible)
 

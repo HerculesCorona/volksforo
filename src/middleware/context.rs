@@ -1,3 +1,4 @@
+use super::{Flash, FlashMessage};
 use actix_session::Session;
 use actix_web::dev::{
     self, Extensions, Payload, Service, ServiceRequest, ServiceResponse, Transform,
@@ -8,23 +9,24 @@ use std::future::{ready, Ready};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-/// Client data stored for a single request cycle.
-/// Distinct from ClientCtx because it is defined through request data.
-#[derive(Clone, Debug)]
-pub struct ContextInner {
+/// Client context passed to routes.
+#[derive(Debug)]
+pub struct Context {
     /// User data. Optional. None is a guest user.
     //pub client: Option<Profile>,
     /// List of user group ids. Guests may receive unregistered/portal roles.
     //pub groups: Vec<i32>,
     /// Permission data.
     //pub permissions: Data<PermissionData>,
+    /// Flash messages.
+    pub messages: Vec<FlashMessage>,
     /// Randomly generated string for CSR.
     pub nonce: String,
     /// Time the request started for page load statistics.
     pub request_start: Instant,
 }
 
-impl Default for ContextInner {
+impl Default for Context {
     fn default() -> Self {
         Self {
             // Guests and users.
@@ -33,13 +35,14 @@ impl Default for ContextInner {
             // Only users.
             //client: None,
             // Generally left default.
+            messages: Default::default(),
             nonce: Self::nonce(),
             request_start: Instant::now(),
         }
     }
 }
 
-impl ContextInner {
+impl Context {
     //pub async fn from_session(session: &Session, permissions: Data<PermissionData>) -> Self {
     //    use crate::group::get_group_ids_for_client;
     //    use crate::session::authenticate_client_by_session;
@@ -81,29 +84,23 @@ impl ContextInner {
 
         hasher.finalize().to_string()
     }
-}
 
-/// Client context passed to routes.
-/// Wraps ContextInner, which is set at the beginning of the request.
-#[derive(Clone, Debug)]
-pub struct Context(Data<ContextInner>);
-
-impl Default for Context {
-    fn default() -> Self {
-        Self(Data::new(ContextInner::default()))
+    pub fn flash(&mut self, class: Flash, message: &str) {
+        self.messages.push(FlashMessage {
+            class,
+            message: message.to_owned(),
+        })
     }
-}
 
-impl Context {
-    // Returns the security nonce from ContextInner.
-    // Generates once in ContextInner::default() as random.
+    /// Returns the security nonce from ContextInner.
+    /// Generates once in ContextInner::default() as random.
     pub fn get_nonce(&self) -> &String {
-        &self.0.nonce
+        &self.nonce
     }
 
     /// Returns Duration representing request time.
     pub fn request_time(&self) -> Duration {
-        Instant::now() - self.0.request_start
+        Instant::now() - self.request_start
     }
 
     /// Returns human readable representing request time.

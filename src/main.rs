@@ -101,6 +101,7 @@ async fn main() -> std::io::Result<()> {
             // https://www.restapitutorial.com/lessons/httpmethods.html
             // GET    view_ (read/view/render entity)
             // GET    edit_ (get edit form)
+            // PUT    create_
             // PATCH  update_ (apply edit)
             // Note: PUT and PATCH were added, removed, and re-added(?) to the HTML5 spec for <form method="">
             .configure(controller::configure)

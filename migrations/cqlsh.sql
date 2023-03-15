@@ -98,6 +98,8 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id bigint,
     username text,
+    email text,
+    password text,
     PRIMARY KEY (id)
 );
 

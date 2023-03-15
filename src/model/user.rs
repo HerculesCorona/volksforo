@@ -9,6 +9,8 @@ use tokio::task::JoinSet;
 pub struct User {
     pub id: i64,
     pub username: String,
+    pub email: String,
+    pub password: String,
 }
 
 impl User {
@@ -24,6 +26,8 @@ impl User {
                         r#"SELECT
                             id,
                             username
+                            email,
+                            password
                         FROM volksforo.users
                         WHERE id = ?
                         LIMIT 1
