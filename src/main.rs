@@ -80,9 +80,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(snowflake.clone())
             .app_data(scylla.clone())
-            .service(get_index)
-            .service(get_forum)
-            .service(get_thread)
+            .service(view_index)
+            .service(view_forum)
             .wrap(Context::default())
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
@@ -99,6 +98,11 @@ async fn main() -> std::io::Result<()> {
                     ),
             )
             .wrap(Logger::new("%a %{User-Agent}i"))
+            // https://www.restapitutorial.com/lessons/httpmethods.html
+            // GET    view_ (read/view/render entity)
+            // GET    edit_ (get edit form)
+            // PATCH  update_ (apply edit)
+            // Note: PUT and PATCH were added, removed, and re-added(?) to the HTML5 spec for <form method="">
             .configure(controller::configure)
     })
     .bind(env::var("VF_APP_BIND").expect("VF_APP_BIND is unset"))?
@@ -107,19 +111,19 @@ async fn main() -> std::io::Result<()> {
 }
 
 #[get("/")]
-async fn get_index(context: Context, scylla: Data<Session>) -> actix_web::Result<impl Responder> {
+async fn view_index(context: Context, scylla: Data<Session>) -> actix_web::Result<impl Responder> {
     use self::model::Node;
     let nodes = Node::fetch_all(scylla).await.unwrap();
     Ok(self::view::IndexTemplate { context, nodes })
 }
 
 #[get("/forums/{node_id}/")]
-async fn get_forum(
+async fn view_forum(
     scylla: Data<Session>,
     path: web::Path<i64>,
 ) -> actix_web::Result<impl Responder> {
     let node_id = path.into_inner();
-    let nodes = self::model::Thread::fetch_node(scylla, node_id)
+    let nodes = self::model::Thread::fetch_node_page(scylla, node_id, 1)
         .await
         .unwrap();
     let mut strings = Vec::with_capacity(nodes.len());
@@ -128,27 +132,4 @@ async fn get_forum(
     }
 
     Ok(HttpResponse::Ok().body(strings.join("<br />")))
-}
-
-#[get("/threads/{thread_id}/")]
-async fn get_thread(
-    scylla: Data<Session>,
-    path: web::Path<i64>,
-) -> actix_web::Result<impl Responder> {
-    let thread_id = path.into_inner();
-    let posts = self::model::Post::fetch_thread(scylla.clone(), thread_id, 1)
-        .await
-        .unwrap();
-    let ugc = self::model::Ugc::fetch_many_posts(scylla.clone(), &posts)
-        .await
-        .unwrap();
-
-    let mut strings = Vec::with_capacity(ugc.len());
-    for post in &posts {
-        if let Some(pugc) = ugc.get(&post.ugc_id) {
-            strings.push(pugc.to_string());
-        }
-    }
-
-    Ok(HttpResponse::Ok().body(strings.join("<hr />")))
 }

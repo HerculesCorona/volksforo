@@ -6,3 +6,5 @@ pub mod thread;
 pub use thread::Thread;
 pub mod ugc;
 pub use ugc::Ugc;
+pub mod user;
+pub use user::User;

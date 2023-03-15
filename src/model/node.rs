@@ -11,6 +11,23 @@ pub struct Node {
 }
 
 impl Node {
+    pub async fn fetch(scylla: Data<Session>, node_id: i64) -> Result<Option<Self>> {
+        if let Some(rows) = scylla
+            .query(
+                "SELECT id, display_order, title, description FROM volksforo.nodes WHERE id = ?",
+                (node_id,),
+            )
+            .await?
+            .rows
+        {
+            for row in rows.into_typed::<Self>() {
+                return Ok(Some(row?));
+            }
+        }
+
+        Ok(None)
+    }
+
     pub async fn fetch_all(scylla: Data<Session>) -> Result<Vec<Self>> {
         if let Some(rows) = scylla
             .query(
@@ -36,6 +53,6 @@ impl Node {
 
 impl std::fmt::Display for Node {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "<a href=\"/forums/{}\">{}</a>", self.id, self.title)
+        write!(f, "<a href=\"/forums/{}/\">{}</a>", self.id, self.title)
     }
 }

@@ -1,0 +1,17 @@
+{% extends "container/public.html" %}
+
+{% block content %}
+<div class="thread">
+    <h1>{{ thread.title }}{% match thread.subtitle %}
+        {% when Some with (subtitle) %}<span class="subtitle"> - {{subtitle}}</span>{% when None %}{% endmatch %}</h1>
+
+    {% for (post) in posts %}
+    <div>{% if let Some(ugc) = ugc.get(post.ugc_id) %}
+        {{ ugc.content }}
+        {% else %}
+        <p>No post content found.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

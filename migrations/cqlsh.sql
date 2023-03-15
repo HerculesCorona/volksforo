@@ -27,16 +27,25 @@ DROP TABLE IF EXISTS threads;
 CREATE TABLE threads (
     id bigint,
     node_id bigint,
+    bucket_id int,
     title text,
     subtitle text,
     first_post_id bigint,
+    first_post_user_id bigint,
     last_post_id bigint,
-    PRIMARY KEY (node_id, last_post_id)
-) WITH CLUSTERING ORDER BY (last_post_id DESC);
+    last_post_user_id bigint,
+    PRIMARY KEY (node_id, bucket_id, last_post_id)
+) WITH CLUSTERING ORDER BY (bucket_id ASC, last_post_id ASC);
 
-INSERT INTO threads (id, node_id, title, first_post_id, last_post_id) VALUES (1, 1, 'Test Thread', 1, 7);
-INSERT INTO threads (id, node_id, title, first_post_id, last_post_id) VALUES (2, 1, 'Other Thread', 4, 4);
-INSERT INTO threads (id, node_id, title, first_post_id, last_post_id) VALUES (3, 2, 'Chuck Thread', 5, 5);
+-- Indexes are tricky.
+-- https://docs.scylladb.com/stable/using-scylla/secondary-indexes.html
+-- We want to PK node_id,bucket_id,last_post_id so we can do pagination easier.
+DROP INDEX IF EXISTS threads_by_id;
+CREATE INDEX threads_by_id ON volksforo.threads (id);
+
+INSERT INTO threads (id, node_id, bucket_id, title, first_post_id, first_post_user_id, last_post_id, last_post_user_id) VALUES (1, 1, 1, 'Test Thread', 1, 1, 7, 1);
+INSERT INTO threads (id, node_id, bucket_id, title, first_post_id, first_post_user_id, last_post_id, last_post_user_id) VALUES (2, 1, 1, 'Other Thread', 4, 420, 4, 420);
+INSERT INTO threads (id, node_id, bucket_id, title, first_post_id, first_post_user_id, last_post_id, last_post_user_id) VALUES (3, 2, 1, 'Chuck Thread', 5, 69, 5, 69);
 
 --
 -- Posts
@@ -82,3 +91,16 @@ INSERT INTO ugc (id, created_at, content) VALUES (0ec2e499-356f-465a-bb37-ad9904
 INSERT INTO ugc (id, created_at, content) VALUES (cfc00480-3ae0-4af4-ab5e-542414c9c968, '2023-03-12T14:27:06+00:00', 'Sixth post');
 INSERT INTO ugc (id, created_at, content) VALUES (cfc00480-3ae0-4af4-ab5e-542414c9c968, '2023-03-12T14:27:07+00:00', 'Seventh* post, sorry');
 
+--
+-- User
+--
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+    id bigint,
+    username text,
+    PRIMARY KEY (id)
+);
+
+INSERT INTO users (id, username) VALUES (1, 'admin');
+INSERT INTO users (id, username) VALUES (69, 'Sneed');
+INSERT INTO users (id, username) VALUES (420, 'Chuck');

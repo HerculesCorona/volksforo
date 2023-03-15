@@ -1,6 +1,6 @@
 pub mod asset;
 pub mod error;
-pub mod forum;
+pub mod node;
 pub mod thread;
 
 /// Configures the web app by adding services from each web file.
@@ -10,4 +10,6 @@ pub fn configure(conf: &mut actix_web::web::ServiceConfig) {
     // Descending order. Order is important.
     // Route resolution will stop at the first match.
     asset::configure(conf);
+    node::configure(conf);
+    thread::configure(conf);
 }
