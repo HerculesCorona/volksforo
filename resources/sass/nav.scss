@@ -1,0 +1,52 @@
+#primary-nav {
+    background-color: #333;
+    padding: 12px 0;
+
+    .brand {
+        display: block;
+        font-size: 2em;
+        font-weight: bold;
+        text-decoration: none;
+        margin: 0 0 6px 0;
+        color: white;
+    }
+
+    ul {
+        list-style-type: none;
+        margin: 6px 0 0 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    li {
+        float: left;
+    }
+
+    .nav-link {
+        color: white;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    &::after {
+        display: table;
+        content: " ";
+        clear: both;
+    }
+}
+
+.nav-main {
+    float: left;
+
+    li {
+        margin-right: 12px;
+    }
+}
+
+.nav-side {
+    float: right;
+
+    li {
+        margin-left: 12px;
+    }
+}
