@@ -81,9 +81,7 @@ fn test_init_structure() {
             for item_datum in item_data.iter() {
                 if item_datum.1 == col.categories[i].id {
                     match col.categories[i].add_item(item_datum.0, &item_datum.2) {
-                        Ok(_) => {
-                            println!("Added")
-                        }
+                        Ok(_) => log::warn!("Added category."),
                         Err(_) => assert!(false, "Category overflow?"),
                     }
                 }

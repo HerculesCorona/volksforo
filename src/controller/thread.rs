@@ -1,8 +1,22 @@
+use crate::filters;
 use crate::middleware::Context;
 use crate::model::{Node, Post, Thread, Ugc, User};
 use actix_web::web::{Data, Path};
 use actix_web::{error, get, Responder};
+use askama::Template;
 use scylla::Session;
+use std::collections::HashMap;
+
+#[derive(Template)]
+#[template(path = "thread.html")]
+pub struct ThreadTemplate {
+    pub context: Context,
+    pub node: Node,
+    pub thread: Thread,
+    pub posts: Vec<Post>,
+    pub ugcs: HashMap<i64, Ugc>,
+    pub users: HashMap<i64, User>,
+}
 
 pub(super) fn configure(conf: &mut actix_web::web::ServiceConfig) {
     conf.service(view_thread);
@@ -39,22 +53,24 @@ async fn view_thread(
         (Err(err), Err(_)) => return Err(error::ErrorInternalServerError(err)),
     };
 
-    let (ugc, users) = match tokio::join!(
+    let (ugcs, users) = match tokio::join!(
         Ugc::fetch_many_posts(scylla.clone(), &posts),
         User::fetch_many_post_authors(scylla.clone(), &posts),
     ) {
-        (Ok(ugc), Ok(users)) => (ugc, users),
+        (Ok(ugcs), Ok(users)) => (ugcs, users),
         (Ok(_), Err(err)) => return Err(error::ErrorInternalServerError(err)),
         (Err(err), Ok(_)) => return Err(error::ErrorInternalServerError(err)),
         (Err(err), Err(_)) => return Err(error::ErrorInternalServerError(err)),
     };
 
-    Ok(crate::view::ThreadTemplate {
+    thread.bump_view_count(scylla.to_owned());
+
+    Ok(ThreadTemplate {
         context,
         node,
         thread,
         posts,
-        ugc,
+        ugcs,
         users,
     })
 }

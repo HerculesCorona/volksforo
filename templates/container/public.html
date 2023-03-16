@@ -55,13 +55,13 @@
             <div class="container">
                 {% block navigation %}
                 <ul class="nav-main">
-                    <li><a href="/forums" class="nav-link">Forums</a></li>
-                    <li><a href="/chat" class="nav-link">Chat</a></li>
-                    <li><a href="/members" class="nav-link">Members</a></li>
+                    <li><a href="/forums/" class="nav-link">Forums</a></li>
+                    <li><a href="/chat/" class="nav-link">Chat</a></li>
+                    <li><a href="/members/" class="nav-link">Members</a></li>
                 </ul>
                 <ul class="nav-side">
-                    <li><a href="/register" class="nav-link">Register</a></li>
-                    <li><a href="/login" class="nav-link">Login</a></li>
+                    <li><a href="/register/" class="nav-link">Register</a></li>
+                    <li><a href="/login/" class="nav-link">Login</a></li>
                 </ul>
                 {% endblock %}
             </div>
@@ -70,16 +70,13 @@
     </header>
     {% endblock %}
 
-    {% block flash %}
-    {% if context.messages.len() > 0 %}
-    <aside class="container">
-        <section class="notices">{% for message in context.messages %}{{ message|safe }}{% endfor %}</section>
-    </aside>
-    {% endif %}
-    {% endblock %}
 
     {% block main %}
     <main class="container">
+        {% block flash %}{% if context.messages.len() > 0 %}
+        <aside class="notices">{% for message in context.messages %}{{ message|safe }}{% endfor %}</aside>
+        {% endif %}{% endblock %}
+
         {% block content %}{% endblock %}
     </main>
     {% endblock %}

@@ -59,18 +59,21 @@ impl Ugc {
     pub async fn fetch_many_posts(
         scylla: Data<Session>,
         posts: &Vec<super::Post>,
-    ) -> Result<HashMap<Uuid, Self>> {
+    ) -> Result<HashMap<i64, Self>> {
         let uuids = posts
             .iter()
             .map(|x| x.ugc_id.to_owned())
             .collect::<Vec<Uuid>>();
 
-        Self::fetch_many(scylla, uuids).await
-    }
-}
+        let mut ugc = Self::fetch_many(scylla, uuids).await?;
+        let mut result = HashMap::with_capacity(ugc.len());
 
-impl std::fmt::Display for &Ugc {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "<div>{}</div>", self.content)
+        for post in posts {
+            if let Some(content) = ugc.remove(&post.ugc_id) {
+                result.insert(post.id, content);
+            }
+        }
+
+        Ok(result)
     }
 }

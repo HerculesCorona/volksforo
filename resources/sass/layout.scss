@@ -20,7 +20,12 @@ body {
 
 main {
     flex: 1;
-    margin-top: 16px;
+    margin: 1rem auto;
+}
+
+aside,
+section {
+    margin: 1rem auto;
 }
 
 header {
@@ -36,7 +41,7 @@ footer {
 }
 
 .container {
-    margin: 0 auto;
+    margin: auto;
     width: 80%;
     padding: 0 16px;
 }

@@ -1,0 +1,28 @@
+<div class="message">
+    <div class="message-cell message-cell--author">
+        {% if let Some(user) = user %}
+        {# {{ user.get_avatar_html(crate::attachment::AttachmentSize::L)|safe }} #}
+        <div class="username">{{ user.username }}</div>
+        {% else %}
+        {# TODO: l10n #}
+        <div class="username">Guest</div>
+        {% endif %}
+    </div>
+    <div class="message-cell message-cell--main">
+        <div class="message-header">
+            <div class="message-header--left">
+                {{ post.created_at|duration_timestamp|safe }}
+            </div>
+            <div class="message-header--right">
+                <a href="/threads/{{ post.thread_id }}/post-{{ post.id }}" title="Permanent link">#{{ post.position
+                    }}</a>
+            </div>
+        </div>
+
+        {% match post_ugc %}{% when Some with (ugc) %}
+        <div class="message-content">
+            {% include "ugc/ugc.html" %}
+        </div>
+        {% when None %}{% endmatch %}
+    </div>
+</div>

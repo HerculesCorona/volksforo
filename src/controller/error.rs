@@ -50,5 +50,6 @@ pub fn render_404<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>>
 }
 
 pub fn render_500<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
+    println!("Custom backtrace: {}", std::backtrace::Backtrace::capture());
     error_document::<B>(res)
 }

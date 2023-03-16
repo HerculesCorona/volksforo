@@ -12,34 +12,47 @@
 extern crate log;
 
 mod controller;
+mod filters;
 mod middleware;
 mod model;
-mod view;
 
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::cookie::Key;
 use actix_web::http::StatusCode;
 use actix_web::middleware::{ErrorHandlers, Logger};
 use actix_web::web::Data;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{App, HttpServer};
+use env_logger::Env;
 use middleware::context::Context;
 use rand::{distributions::Alphanumeric, Rng};
-use scylla::{Session, SessionBuilder};
+use scylla::SessionBuilder;
 use snowflake::SnowflakeIdBucket;
 use std::env;
 use std::sync::Mutex;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("𝖁𝖔𝖑𝖐𝖘𝖋𝖔𝖗𝖔");
-
-    // Load .env values
+    // Load environmental variables and configure logging.
     dotenv::dotenv().ok();
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
-    println!("Building snowflakes.");
+    log::info!("𝖁𝖔𝖑𝖐𝖘𝖋𝖔𝖗𝖔");
+
+    // Build Scylla connection
+    log::info!("Connecting to Scylla.");
+    let scylla = Data::new(
+        SessionBuilder::new()
+            .known_node(env::var("VF_DB_URI").expect("VF_DB_URI is unset"))
+            //.user("username", "password")
+            .build()
+            .await
+            .expect("Unable to connect to ScyllaDB"),
+    );
+
     // Snowflake ID generator
     // https://en.wikipedia.org/wiki/Snowflake_ID
     // https://crates.io/crates/rs-snowflake
+    log::info!("Building snowflakes.");
     let snowflake = Data::new(Mutex::new(SnowflakeIdBucket::new(
         env::var("VF_NODE_ID")
             .expect("VF_NODE_ID is unset")
@@ -51,17 +64,6 @@ async fn main() -> std::io::Result<()> {
             .expect("VF_MACHINE_ID is not i32"),
     )));
 
-    println!("Connecting to Scylla.");
-    // Build Scylla connection
-    let scylla = Data::new(
-        SessionBuilder::new()
-            .known_node(env::var("VF_DB_URI").expect("VF_DB_URI is unset"))
-            //.user("username", "password")
-            .build()
-            .await
-            .expect("Unable to connect to ScyllaDB"),
-    );
-
     let secret_key = match std::env::var("VF_SESSION_KEY") {
         Ok(key) => Key::from(key.as_bytes()),
         Err(err) => {
@@ -70,7 +72,7 @@ async fn main() -> std::io::Result<()> {
                 .take(128)
                 .map(char::from)
                 .collect();
-            println!("VF_SESSION_KEY was invalid. Reason: {:?}\r\nThis means the key used for signing session cookies will invalidate every time the application is restarted. A secret key must be at least 64 bytes to be accepted.\r\n\r\nNeed a key? How about:\r\n{}", err, random_string);
+            log::warn!("VF_SESSION_KEY was invalid. Reason: {:?}\r\nThis means the key used for signing session cookies will invalidate every time the application is restarted. A secret key must be at least 64 bytes to be accepted.\r\n\r\nNeed a key? How about:\r\n{}", err, random_string);
             Key::from(random_string.as_bytes())
         }
     };
@@ -80,8 +82,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(snowflake.clone())
             .app_data(scylla.clone())
-            .service(view_index)
-            .service(view_forum)
             .wrap(Context::default())
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
@@ -109,28 +109,4 @@ async fn main() -> std::io::Result<()> {
     .bind(env::var("VF_APP_BIND").expect("VF_APP_BIND is unset"))?
     .run()
     .await
-}
-
-#[get("/")]
-async fn view_index(context: Context, scylla: Data<Session>) -> actix_web::Result<impl Responder> {
-    use self::model::Node;
-    let nodes = Node::fetch_all(scylla).await.unwrap();
-    Ok(self::view::IndexTemplate { context, nodes })
-}
-
-#[get("/forums/{node_id}/")]
-async fn view_forum(
-    scylla: Data<Session>,
-    path: web::Path<i64>,
-) -> actix_web::Result<impl Responder> {
-    let node_id = path.into_inner();
-    let nodes = self::model::Thread::fetch_node_page(scylla, node_id, 1)
-        .await
-        .unwrap();
-    let mut strings = Vec::with_capacity(nodes.len());
-    for node in nodes {
-        strings.push(node.to_string());
-    }
-
-    Ok(HttpResponse::Ok().body(strings.join("<br />")))
 }

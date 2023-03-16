@@ -145,7 +145,7 @@ pub async fn new() -> Result<PermissionData, sea_orm::error::DbErr> {
                         col.lookup.insert(item.id, (i as u8, item.position as u8));
                     }
                     Err(_) => {
-                        println!("Category overflow adding {:?}", item);
+                        log::error!("Category overflow adding {:?}", item);
                     }
                 }
             }
@@ -172,9 +172,10 @@ pub async fn new() -> Result<PermissionData, sea_orm::error::DbErr> {
                 // Assign each flag to the CollectionValues.
                 cv.set_flag(pindices.0, pindices.1, pv.value);
             } else {
-                println!(
+                log::error!(
                     "Failed to lookup indices for permission_values {:?},{:?}",
-                    pv.collection_id, pv.permission_id
+                    pv.collection_id,
+                    pv.permission_id
                 );
             }
         }

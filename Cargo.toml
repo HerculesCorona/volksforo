@@ -12,7 +12,7 @@ askama = { version = "0", features = ["with-actix-web"] } # Templating
 askama_actix = "0.14"
 bitflags = "1"       # Bitmap structs (permission system)
 blake3 = "1.3"       # Nonce
-chrono = "0.4"       # Time (Scylla co-dependency)
+chrono = {version = "0.4", features = ["std"] }# Time (Scylla co-dependency)
 dashmap = "5"        # Concurrent associative arrays (permission system)
 dotenv = "0"         # Environmental variables
 env_logger = "0.10"  # 

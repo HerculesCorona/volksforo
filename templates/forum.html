@@ -1,0 +1,30 @@
+{% extends "container/public.html" %}
+
+{% block content %}
+<h1>{{ node.title }}</h1>
+<h2>Threads</h2>
+<div class="struct-container">
+    {% for (thread, reply_count, view_count) in threads %}
+    <div class="struct-item struct-item--thread" data-id="{{ thread.id }}">
+        <div class="struct-item-cell struct-item-cell--icon struct-item-cell--iconStart"></div>
+        <div class="struct-item-cell struct-item-cell--main">
+            <a href="/threads/{{ thread.id }}/">{{ thread.title }}</a><br />
+            {% if let Some(subtitle) = thread.subtitle %}{{ subtitle }}<br />{% endif %}
+            <small>{{ thread.created_at|duration_timestamp|safe }}</small>
+        </div>
+        <div class="struct-item-cell struct-item-cell--meta">
+            <dl>
+                <dt>Replies:</dt>
+                <dd>{{ reply_count }}</dd>
+            </dl>
+            <dl>
+                <dt>Views:</dt>
+                <dd>{{ view_count }}</dd>
+            </dl>
+        </div>
+        <div class="struct-item-cell struct-item-cell--latest"></div>
+        <div class="struct-item-cell struct-item-cell--icon struct-item-cell--iconEnd"></div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

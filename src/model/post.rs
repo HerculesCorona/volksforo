@@ -1,5 +1,6 @@
 use actix_web::web::Data;
 use anyhow::Result;
+use chrono::Duration;
 use scylla::{FromRow, IntoTypedRows};
 use tokio::task::JoinSet;
 use uuid::Uuid;
@@ -11,6 +12,7 @@ pub struct Post {
     pub id: i64,
     pub thread_id: i64,
     pub position: i32,
+    pub created_at: Duration,
     pub user_id: i64,
     pub ugc_id: Uuid,
 }
@@ -19,7 +21,7 @@ impl Post {
     pub async fn fetch(scylla: Data<scylla::Session>) -> Result<Vec<Self>> {
         if let Some(rows) = scylla
             .query(
-                "SELECT id, thread_id, position, user_id, ugc_id FROM volksforo.posts",
+                "SELECT id, thread_id, position, created_at, user_id, ugc_id FROM volksforo.posts",
                 &[],
             )
             .await?
@@ -59,6 +61,7 @@ impl Post {
                         id,
                         thread_id,
                         position,
+                        created_at,
                         user_id,
                         ugc_id
                     FROM volksforo.posts
