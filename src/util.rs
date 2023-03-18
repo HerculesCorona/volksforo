@@ -1,7 +1,5 @@
 use anyhow::Result;
 use once_cell::sync::OnceCell;
-use snowflake::SnowflakeIdBucket;
-use std::sync::Mutex;
 
 /// Holds the Argon2 configuration used for password checks.
 pub static ARGON2_CONFIG: OnceCell<argon2::Config> = OnceCell::new();
@@ -24,15 +22,14 @@ pub fn argon2_verify(hash: &str, password: &str) -> Result<bool> {
 
 /// Snowflake ID Bucket
 /// Wrapped in mutex because the bucket serializes new IDs.
-pub static SNOWFLAKE_BUCKET: OnceCell<Mutex<SnowflakeIdBucket>> = OnceCell::new();
+pub static SNOWFLAKE_BUCKET: OnceCell<hexafreeze::Generator> = OnceCell::new();
 
-pub fn snowflake_id() -> i64 {
-    SNOWFLAKE_BUCKET
+pub async fn snowflake_id() -> Result<i64> {
+    Ok(SNOWFLAKE_BUCKET
         .get()
         .expect("SNOWFLAKE_BUCKET is unset")
-        .lock()
-        .expect("SNOWFLAKE_BUCKET is unlockable")
-        .get_id()
+        .generate()
+        .await?)
 }
 
 #[cfg(test)]
@@ -41,7 +38,7 @@ mod tests {
 
     #[test]
     fn test_password() {
-        std::env::set_var("VG_SALT", "Yya6#MEU6a7S3ZCPy@8yXq@h");
+        std::env::set_var("VF_SALT", "Yya6#MEU6a7S3ZCPy@8yXq@h");
         ARGON2_CONFIG
             .set(argon2::Config::default())
             .expect("failed ARGON2_CONFIG");
@@ -54,5 +51,10 @@ mod tests {
 
         let password2 = "qRMFtvQ&_2Wi8bWu66aybpU!R";
         assert!(!argon2_verify(&hash, password2).expect("failed to verify"));
+    }
+
+    #[test]
+    fn test_id() {
+        std::env::set_var("VF_MACHINE_ID", "1");
     }
 }

@@ -22,7 +22,7 @@ impl User {
         email: Option<String>,
         password: String,
     ) -> Result<Self> {
-        let id = crate::util::snowflake_id();
+        let id = crate::util::snowflake_id().await?;
         let user = Self {
             id: id.to_owned(),
             username: username.to_owned(),

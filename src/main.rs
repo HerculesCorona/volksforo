@@ -27,9 +27,7 @@ use env_logger::Env;
 use middleware::context::Context;
 use rand::{distributions::Alphanumeric, Rng};
 use scylla::SessionBuilder;
-use snowflake::SnowflakeIdBucket;
 use std::env;
-use std::sync::Mutex;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -55,18 +53,16 @@ async fn main() -> std::io::Result<()> {
     // https://en.wikipedia.org/wiki/Snowflake_ID
     // https://crates.io/crates/rs-snowflake
     log::info!("Building snowflakes.");
-    util::SNOWFLAKE_BUCKET
-        .set(Mutex::new(SnowflakeIdBucket::new(
+    util::SNOWFLAKE_BUCKET.set(
+        hexafreeze::Generator::new(
             env::var("VF_NODE_ID")
                 .expect("VF_NODE_ID is unset")
-                .parse::<i32>()
+                .parse::<i64>()
                 .expect("VF_NODE_ID is not i32"),
-            env::var("VF_MACHINE_ID")
-                .expect("VF_MACHINE_ID is unset")
-                .parse::<i32>()
-                .expect("VF_MACHINE_ID is not i32"),
-        )))
-        .expect("SNOWFLAKE_BUCKET could not be set");
+            *hexafreeze::DEFAULT_EPOCH,
+        )
+        .expect("SNOWFLAKE_BUCKET failed to generate hexafreeze."),
+    );
 
     log::info!("Building Argon2 hash config.");
     util::ARGON2_CONFIG

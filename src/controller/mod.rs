@@ -1,5 +1,4 @@
 use crate::middleware::Context;
-use actix_web::Responder;
 use askama::Template;
 
 pub mod account;
