@@ -75,21 +75,39 @@ DROP TABLE IF EXISTS posts;
 CREATE TABLE posts (
     id bigint,
     thread_id bigint,
-    position int,
     created_at timestamp,
     user_id bigint,
     ugc_id uuid,
-    PRIMARY KEY ((thread_id, position), id)
-) WITH CLUSTERING ORDER BY (id ASC); -- threads order newest to oldest
+    PRIMARY KEY (id)
+); -- threads order newest to oldest
 
 
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (1, 1, 1, 1, '2023-03-12T14:27:00+00:00', 9d1fe4ff-00a4-418f-8234-8ee2208f85eb);
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (2, 1, 2, 69, '2023-03-12T14:27:01+00:00', 077d372c-8836-44e4-a75d-7f119a5ac195);
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (3, 1, 3, 420, '2023-03-12T14:27:02+00:00', 90d07d83-1736-491d-872f-9fce4d5250a9);
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (4, 2, 1, 420, '2023-03-12T14:27:03+00:00', 8fabdde1-1ccb-42ab-8cd3-70c91fe571c6);
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (5, 3, 1, 69, '2023-03-12T14:27:04+00:00', 0c287743-199f-4160-95b0-4992785b62a2);
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (6, 1, 4, 69, '2023-03-12T14:27:05+00:00', 0ec2e499-356f-465a-bb37-ad9904f29122); -- duplicate position
-INSERT INTO posts (id, thread_id, position, user_id, created_at, ugc_id) VALUES (7, 1, 4, 1, '2023-03-12T14:27:06+00:00', cfc00480-3ae0-4af4-ab5e-542414c9c968);
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (1, 1, 1, '2023-03-12T14:27:00+00:00', 9d1fe4ff-00a4-418f-8234-8ee2208f85eb);
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (2, 1, 69, '2023-03-12T14:27:01+00:00', 077d372c-8836-44e4-a75d-7f119a5ac195);
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (3, 1, 420, '2023-03-12T14:27:02+00:00', 90d07d83-1736-491d-872f-9fce4d5250a9);
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (4, 2, 420, '2023-03-12T14:27:03+00:00', 8fabdde1-1ccb-42ab-8cd3-70c91fe571c6);
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (5, 3, 69, '2023-03-12T14:27:04+00:00', 0c287743-199f-4160-95b0-4992785b62a2);
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (6, 1, 69, '2023-03-12T14:27:05+00:00', 0ec2e499-356f-465a-bb37-ad9904f29122); -- duplicate position
+INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (7, 1, 1, '2023-03-12T14:27:06+00:00', cfc00480-3ae0-4af4-ab5e-542414c9c968);
+
+--
+-- Post Position
+--
+DROP TABLE IF EXISTS post_positions;
+CREATE TABLE post_positions (
+    thread_id bigint,
+    position int,
+    post_id bigint,
+    PRIMARY KEY ((thread_id, position), post_id)
+) WITH CLUSTERING ORDER BY (post_id ASC);
+
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 1, 1);
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 2, 2);
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 3, 3);
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (2, 1, 4);
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (3, 1, 5);
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 4, 6); -- duplicate position
+INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 4, 7);
 
 --
 -- UGC
@@ -120,11 +138,16 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id bigint,
     username text,
+    username_normal text,
     email text,
     password text,
+    password_cipher text,
     PRIMARY KEY (id)
 );
 
-INSERT INTO users (id, username) VALUES (1, 'admin');
-INSERT INTO users (id, username) VALUES (69, 'Sneed');
-INSERT INTO users (id, username) VALUES (420, 'Chuck');
+DROP INDEX IF EXISTS users_by_name_normal;
+CREATE INDEX users_by_name_normal ON volksforo.users (username_normal);
+
+INSERT INTO users (id, username, username_normal, password, password_cipher) VALUES (1, 'admin', 'admin', 'password', 'plaintext');
+INSERT INTO users (id, username, username_normal, password, password_cipher) VALUES (69, 'Sneed', 'sneed', 'password', 'plaintext');
+INSERT INTO users (id, username, username_normal, password, password_cipher) VALUES (420, 'Chuck', 'chuck', 'password', 'plaintext');

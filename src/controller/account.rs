@@ -1,4 +1,5 @@
 use crate::middleware::{Context, Flash};
+use crate::model::User;
 use actix_web::web::Form;
 use actix_web::{get, post, Responder};
 use askama::Template;
@@ -25,16 +26,25 @@ pub struct RegisterForm {
 
 #[post("/register/")]
 pub async fn put_register(mut context: Context, mut form: Form<RegisterForm>) -> impl Responder {
+    let mut valid = true;
+
     if form.username.is_none() {
+        valid = false;
         context.flash(Flash::ERROR, "A uername is mandatory.");
     } else if form.password.is_none() {
+        valid = false;
         context.flash(Flash::ERROR, "a password is mandatory.");
     } else if form.password != form.password_confirm {
+        valid = false;
         context.flash(Flash::ERROR, "Password fields do not match.");
     }
 
-    form.0.password = None;
-    form.0.password_confirm = None;
+    if valid {
+        //
+    } else {
+        form.0.password = None;
+        form.0.password_confirm = None;
+    }
 
     RegisterTemplate {
         context,

@@ -9,8 +9,10 @@ use tokio::task::JoinSet;
 pub struct User {
     pub id: i64,
     pub username: String,
+    pub username_normal: String,
     pub email: Option<String>,
-    pub password: Option<String>,
+    pub password: String,
+    pub password_cipher: String,
 }
 
 impl User {
@@ -26,8 +28,10 @@ impl User {
                         r#"SELECT
                             id,
                             username,
+                            username_normal,
                             email,
-                            password
+                            password,
+                            password_cipher
                         FROM volksforo.users
                         WHERE id = ?
                         LIMIT 1
@@ -60,4 +64,21 @@ impl User {
         )
         .await
     }
+
+    //pub async fn insert(&self, scylla: Data<Session>) -> Result<bool> {
+    //    scylla.query(
+    //        r#"INSERT INTO volksforo.users
+    //            (id, username, username_normal, email, password, password_cipher)
+    //            VALUES (?, ?, ?, ?, ?, ?)
+    //        ;"#,
+    //        (
+    //            crate::util::snowflake_id(),
+    //            self.username,
+    //            self.username,
+    //            self.email,
+    //            self.password,
+    //            "argon2",
+    //        ),
+    //    )
+    //}
 }

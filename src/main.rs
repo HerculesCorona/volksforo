@@ -15,6 +15,7 @@ mod controller;
 mod filters;
 mod middleware;
 mod model;
+mod util;
 
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::cookie::Key;
@@ -50,20 +51,39 @@ async fn main() -> std::io::Result<()> {
     );
 
     // Snowflake ID generator
+    // The two env accepted must be unique in a federated cluster.
     // https://en.wikipedia.org/wiki/Snowflake_ID
     // https://crates.io/crates/rs-snowflake
     log::info!("Building snowflakes.");
-    let snowflake = Data::new(Mutex::new(SnowflakeIdBucket::new(
-        env::var("VF_NODE_ID")
-            .expect("VF_NODE_ID is unset")
-            .parse::<i32>()
-            .expect("VF_NODE_ID is not i32"),
-        env::var("VF_MACHINE_ID")
-            .expect("VF_MACHINE_ID is unset")
-            .parse::<i32>()
-            .expect("VF_MACHINE_ID is not i32"),
-    )));
+    util::SNOWFLAKE_BUCKET
+        .set(Mutex::new(SnowflakeIdBucket::new(
+            env::var("VF_NODE_ID")
+                .expect("VF_NODE_ID is unset")
+                .parse::<i32>()
+                .expect("VF_NODE_ID is not i32"),
+            env::var("VF_MACHINE_ID")
+                .expect("VF_MACHINE_ID is unset")
+                .parse::<i32>()
+                .expect("VF_MACHINE_ID is not i32"),
+        )))
+        .expect("SNOWFLAKE_BUCKET could not be set");
 
+    log::info!("Building Argon2 hash config.");
+    util::ARGON2_CONFIG
+        .set(argon2::Config {
+            variant: argon2::Variant::Argon2i,
+            version: argon2::Version::Version13,
+            mem_cost: 4096,
+            time_cost: 3,
+            lanes: 1,
+            thread_mode: argon2::ThreadMode::Sequential,
+            secret: &[],
+            ad: &[],
+            hash_length: 32,
+        })
+        .expect("ARGON2_CONFIG could not be set");
+
+    log::info!("Validating session key.");
     let secret_key = match std::env::var("VF_SESSION_KEY") {
         Ok(key) => Key::from(key.as_bytes()),
         Err(err) => {
@@ -80,7 +100,6 @@ async fn main() -> std::io::Result<()> {
     // Start webserver
     HttpServer::new(move || {
         App::new()
-            .app_data(snowflake.clone())
             .app_data(scylla.clone())
             .wrap(Context::default())
             .wrap(SessionMiddleware::new(

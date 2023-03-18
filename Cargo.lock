@@ -2110,6 +2110,7 @@ dependencies = [
  "env_logger",
  "futures-util",
  "log",
+ "once_cell",
  "rand",
  "rs-snowflake",
  "rust-argon2",

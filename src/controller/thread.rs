@@ -14,6 +14,7 @@ pub struct ThreadTemplate {
     pub node: Node,
     pub thread: Thread,
     pub posts: Vec<Post>,
+    pub positions: HashMap<i64, i32>,
     pub ugcs: HashMap<i64, Ugc>,
     pub users: HashMap<i64, User>,
 }
@@ -37,7 +38,7 @@ async fn view_thread(
         Err(err) => return Err(error::ErrorInternalServerError(err)),
     };
 
-    let (node, posts) = match tokio::join!(
+    let (node, (posts, positions)) = match tokio::join!(
         Node::fetch(scylla.clone(), thread.node_id),
         Post::fetch_thread(scylla.clone(), thread_id, 1),
     ) {
@@ -70,6 +71,7 @@ async fn view_thread(
         node,
         thread,
         posts,
+        positions,
         ugcs,
         users,
     })

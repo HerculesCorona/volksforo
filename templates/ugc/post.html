@@ -13,10 +13,11 @@
             <div class="message-header--left">
                 {{ post.created_at|duration_timestamp|safe }}
             </div>
+            {% if let Some(pos) = positions.get(post.id) %}
             <div class="message-header--right">
-                <a href="/threads/{{ post.thread_id }}/post-{{ post.id }}" title="Permanent link">#{{ post.position
-                    }}</a>
+                <a href="/threads/{{ post.thread_id }}/post-{{ post.id }}" title="Permanent link">#{{ pos }}</a>
             </div>
+            {% endif %}
         </div>
 
         {% match post_ugc %}{% when Some with (ugc) %}
