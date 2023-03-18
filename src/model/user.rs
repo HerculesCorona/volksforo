@@ -5,7 +5,7 @@ use scylla::{FromRow, IntoTypedRows, Session};
 use std::collections::HashMap;
 use tokio::task::JoinSet;
 
-#[derive(Debug, FromRow)]
+#[derive(Debug, FromRow, Clone)]
 pub struct User {
     pub id: i64,
     pub username: String,
@@ -16,6 +16,25 @@ pub struct User {
 }
 
 impl User {
+    pub async fn create(
+        scylla: Data<Session>,
+        username: String,
+        email: Option<String>,
+        password: String,
+    ) -> Result<Self> {
+        let id = crate::util::snowflake_id();
+        let user = Self {
+            id: id.to_owned(),
+            username: username.to_owned(),
+            username_normal: username.to_lowercase(),
+            email: email,
+            password: crate::util::argon2_hash(&password)?,
+            password_cipher: "argon2".to_owned(),
+        };
+        user.insert(scylla).await?;
+        Ok(user)
+    }
+
     pub async fn fetch_many(scylla: Data<Session>, ids: Vec<i64>) -> Result<HashMap<i64, Self>> {
         let mut queries = JoinSet::new();
         let mut models = HashMap::with_capacity(ids.len());
@@ -65,20 +84,23 @@ impl User {
         .await
     }
 
-    //pub async fn insert(&self, scylla: Data<Session>) -> Result<bool> {
-    //    scylla.query(
-    //        r#"INSERT INTO volksforo.users
-    //            (id, username, username_normal, email, password, password_cipher)
-    //            VALUES (?, ?, ?, ?, ?, ?)
-    //        ;"#,
-    //        (
-    //            crate::util::snowflake_id(),
-    //            self.username,
-    //            self.username,
-    //            self.email,
-    //            self.password,
-    //            "argon2",
-    //        ),
-    //    )
-    //}
+    pub async fn insert(&self, scylla: Data<Session>) -> Result<()> {
+        scylla
+            .query(
+                r#"INSERT INTO volksforo.users
+                    (id, username, username_normal, email, password, password_cipher)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ;"#,
+                (
+                    &self.id,
+                    &self.username,
+                    &self.username_normal,
+                    &self.email,
+                    &self.password,
+                    &self.password_cipher,
+                ),
+            )
+            .await?;
+        Ok(())
+    }
 }

@@ -1,8 +1,9 @@
 use crate::middleware::{Context, Flash};
 use crate::model::User;
-use actix_web::web::Form;
-use actix_web::{get, post, Responder};
+use actix_web::web::{Data, Form};
+use actix_web::{get, post, HttpRequest, Responder};
 use askama::Template;
+use scylla::Session;
 use serde::Deserialize;
 
 pub(super) fn configure(conf: &mut actix_web::web::ServiceConfig) {
@@ -25,30 +26,58 @@ pub struct RegisterForm {
 }
 
 #[post("/register/")]
-pub async fn put_register(mut context: Context, mut form: Form<RegisterForm>) -> impl Responder {
+pub async fn put_register(
+    req: HttpRequest,
+    scylla: Data<Session>,
+    mut context: Context,
+    mut form: Form<RegisterForm>,
+) -> impl Responder {
     let mut valid = true;
 
-    if form.username.is_none() {
+    let RegisterForm {
+        username,
+        email,
+        password,
+        password_confirm,
+    } = form.0;
+
+    if username.is_none() {
         valid = false;
         context.flash(Flash::ERROR, "A uername is mandatory.");
-    } else if form.password.is_none() {
+    } else if password.is_none() {
         valid = false;
         context.flash(Flash::ERROR, "a password is mandatory.");
-    } else if form.password != form.password_confirm {
+    } else if password != password_confirm {
         valid = false;
         context.flash(Flash::ERROR, "Password fields do not match.");
     }
 
     if valid {
-        //
-    } else {
-        form.0.password = None;
-        form.0.password_confirm = None;
-    }
+        let user = User::create(
+            scylla,
+            username.to_owned().unwrap(),
+            email.to_owned(),
+            password.to_owned().unwrap(),
+        )
+        .await;
 
-    RegisterTemplate {
-        context,
-        form: form.0,
+        super::GenericTemplate {
+            context,
+            title: "Registration Complete",
+            body: "Account has been succesfully registered.",
+        }
+        .respond_to(&req)
+    } else {
+        RegisterTemplate {
+            context,
+            form: RegisterForm {
+                username,
+                email,
+                password: None,
+                password_confirm: None,
+            },
+        }
+        .respond_to(&req)
     }
 }
 

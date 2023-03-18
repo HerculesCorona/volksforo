@@ -1,3 +1,7 @@
+use crate::middleware::Context;
+use actix_web::Responder;
+use askama::Template;
+
 pub mod account;
 pub mod asset;
 pub mod error;
@@ -14,4 +18,12 @@ pub fn configure(conf: &mut actix_web::web::ServiceConfig) {
     asset::configure(conf);
     node::configure(conf);
     thread::configure(conf);
+}
+
+#[derive(Template)]
+#[template(path = "container/public.html")]
+struct GenericTemplate<'a> {
+    context: Context,
+    title: &'a str,
+    body: &'a str,
 }

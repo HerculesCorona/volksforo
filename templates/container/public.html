@@ -77,7 +77,11 @@
         <aside class="notices">{% for message in context.messages %}{{ message|safe }}{% endfor %}</aside>
         {% endif %}{% endblock %}
 
-        {% block content %}{% endblock %}
+        {% block content %}
+        {# This generic content is usually overwritten by inheriance. #}
+        <h1>{{ title }}</h1>
+        {{ body|safe }}
+        {% endblock %}
     </main>
     {% endblock %}
 

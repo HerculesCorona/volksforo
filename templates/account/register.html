@@ -2,7 +2,7 @@
 
 {% block content %}
 <h2>Create User</h2>
-<form action="/register" method="post">
+<form action="/register/" method="post">
     <label for="username">Username</label><br />
     <input type="text" id="username" name="username" value="{{ form.username.to_owned().unwrap_or_default() }}" /><br />
     <label for="email">Email</label><br />

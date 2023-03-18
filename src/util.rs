@@ -10,8 +10,8 @@ pub static ARGON2_CONFIG: OnceCell<argon2::Config> = OnceCell::new();
 pub fn argon2_hash(password: &str) -> Result<String> {
     Ok(argon2::hash_encoded(
         password.as_bytes(),
-        std::env::var("VG_SALT")
-            .expect("VG_SALT is unset")
+        std::env::var("VF_SALT")
+            .expect("VF_SALT is unset")
             .as_bytes(),
         &ARGON2_CONFIG.get().expect("ARGON2_CONFIG is unset"),
     )?)
