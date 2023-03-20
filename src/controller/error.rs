@@ -23,6 +23,7 @@ pub fn error_document<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse
         }
         .to_string(),
     );
+
     let mut res: ServiceResponse<EitherBody<B>> =
         res.map_body(|_, _| EitherBody::<B, BoxBody>::right(body));
 
@@ -37,19 +38,7 @@ pub fn error_document<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse
     Ok(ErrorHandlerResponse::Response(res))
 }
 
-pub fn render_400<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
-    error_document::<B>(res)
-}
-
-pub fn render_403<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
-    error_document::<B>(res)
-}
-
-pub fn render_404<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
-    error_document::<B>(res)
-}
-
 pub fn render_500<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
-    println!("Custom backtrace: {}", std::backtrace::Backtrace::capture());
+    log::error!("Custom backtrace: {}", std::backtrace::Backtrace::capture());
     error_document::<B>(res)
 }

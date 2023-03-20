@@ -105,9 +105,7 @@ async fn main() -> std::io::Result<()> {
             ))
             .wrap(
                 ErrorHandlers::new()
-                    .handler(StatusCode::BAD_REQUEST, controller::error::render_400)
-                    .handler(StatusCode::FORBIDDEN, controller::error::render_403)
-                    .handler(StatusCode::NOT_FOUND, controller::error::render_404)
+                    .default_handler(controller::error::error_document)
                     .handler(
                         StatusCode::INTERNAL_SERVER_ERROR,
                         controller::error::render_500,

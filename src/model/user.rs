@@ -88,6 +88,34 @@ impl User {
         Ok(None)
     }
 
+    pub async fn fetch_by_username(
+        scylla: Data<Session>,
+        username: String,
+    ) -> Result<Option<Self>> {
+        if let Some(rows) = scylla
+            .query(
+                "SELECT
+                    id,
+                    username,
+                    username_normal,
+                    email,
+                    password,
+                    password_cipher
+                FROM volksforo.users
+                WHERE username_normal = ?",
+                (username,),
+            )
+            .await?
+            .rows
+        {
+            for row in rows.into_typed::<Self>() {
+                return Ok(Some(row?));
+            }
+        }
+
+        Ok(None)
+    }
+
     pub async fn fetch_many(scylla: Data<Session>, ids: Vec<i64>) -> Result<HashMap<i64, Self>> {
         let mut queries = JoinSet::new();
         let mut models = HashMap::with_capacity(ids.len());

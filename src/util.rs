@@ -20,6 +20,11 @@ pub fn argon2_verify(hash: &str, password: &str) -> Result<bool> {
     Ok(argon2::verify_encoded(hash, password.as_bytes())?)
 }
 
+/// Normalize a username from user input.
+pub fn normalize_username(username: &str) -> String {
+    username.trim().to_lowercase()
+}
+
 /// Snowflake ID Bucket
 /// Wrapped in mutex because the bucket serializes new IDs.
 pub static SNOWFLAKE_BUCKET: OnceCell<hexafreeze::Generator> = OnceCell::new();

@@ -62,7 +62,7 @@
                 <ul class="nav-side">
                     {% match context.visitor.user %}
                     {% when Some(user) %}
-                    <li>{{ user.username }}</li>
+                    <li><a href="/account/" class="nav-link">{{ user.username }}</a></li>
                     {% when None %}
                     <li><a href="/register/" class="nav-link">Register</a></li>
                     <li><a href="/login/" class="nav-link">Login</a></li>
