@@ -60,8 +60,13 @@
                     <li><a href="/members/" class="nav-link">Members</a></li>
                 </ul>
                 <ul class="nav-side">
+                    {% match context.visitor.user %}
+                    {% when Some(user) %}
+                    <li>{{ user.username }}</li>
+                    {% when None %}
                     <li><a href="/register/" class="nav-link">Register</a></li>
                     <li><a href="/login/" class="nav-link">Login</a></li>
+                    {% endmatch %}
                 </ul>
                 {% endblock %}
             </div>
@@ -73,8 +78,8 @@
 
     {% block main %}
     <main class="container">
-        {% block flash %}{% if context.messages.len() > 0 %}
-        <aside class="notices">{% for message in context.messages %}{{ message|safe }}{% endfor %}</aside>
+        {% block flash %}{% if context.jar.messages.len() > 0 %}
+        <aside class="notices">{% for message in context.jar.messages %}{{ message|safe }}{% endfor %}</aside>
         {% endif %}{% endblock %}
 
         {% block content %}

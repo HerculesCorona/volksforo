@@ -36,3 +36,25 @@ impl std::fmt::Display for Flash {
         )
     }
 }
+
+#[derive(Debug)]
+pub struct FlashJar {
+    pub messages: Vec<FlashMessage>,
+}
+
+impl FlashJar {
+    pub fn flash(&mut self, class: Flash, message: &str) {
+        self.messages.push(FlashMessage {
+            class,
+            message: message.to_owned(),
+        })
+    }
+}
+
+impl Default for FlashJar {
+    fn default() -> Self {
+        Self {
+            messages: Default::default(),
+        }
+    }
+}

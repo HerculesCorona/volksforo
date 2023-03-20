@@ -151,3 +151,18 @@ CREATE INDEX users_by_name_normal ON volksforo.users (username_normal);
 INSERT INTO users (id, username, username_normal, password, password_cipher) VALUES (1, 'admin', 'admin', 'password', 'plaintext');
 INSERT INTO users (id, username, username_normal, password, password_cipher) VALUES (69, 'Sneed', 'sneed', 'password', 'plaintext');
 INSERT INTO users (id, username, username_normal, password, password_cipher) VALUES (420, 'Chuck', 'chuck', 'password', 'plaintext');
+
+--
+-- User Sessions
+--
+DROP TABLE IF EXISTS user_sessions;
+CREATE TABLE user_sessions (
+    id uuid,
+    user_id bigint,
+    created_at timestamp,
+    last_seen_at timestamp,
+    PRIMARY KEY(id)
+);
+
+DROP INDEX IF EXISTS user_sessions_by_user_id;
+CREATE INDEX user_sessions_by_user_id ON volksforo.user_sessions (user_id);

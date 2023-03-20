@@ -1,14 +1,16 @@
-use super::{Flash, FlashMessage};
+use super::FlashJar;
 use crate::session::Visitor;
-use actix_session::Session;
+use actix_web::cookie::Cookie;
 use actix_web::dev::{
     self, Extensions, Payload, Service, ServiceRequest, ServiceResponse, Transform,
 };
 use actix_web::{web::Data, Error, FromRequest, HttpMessage, HttpRequest};
 use futures_util::future::LocalBoxFuture;
+use scylla::Session as ScyllaSession;
 use std::future::{ready, Ready};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
+use uuid::Uuid;
 
 /// Client context passed to routes.
 #[derive(Debug)]
@@ -16,7 +18,7 @@ pub struct Context {
     /// List of user group ids. Guests may receive unregistered/portal roles.
     pub groups: Vec<i32>,
     /// Flash messages.
-    pub messages: Vec<FlashMessage>,
+    pub jar: FlashJar,
     /// Randomly generated string for CSR.
     pub nonce: String,
     /// Permission data.
@@ -36,7 +38,7 @@ impl Default for Context {
             // Only users.
             visitor: Default::default(),
             // Generally left default.
-            messages: Default::default(),
+            jar: Default::default(),
             nonce: Self::nonce(),
             request_start: Instant::now(),
         }
@@ -44,21 +46,39 @@ impl Default for Context {
 }
 
 impl Context {
-    //pub async fn from_session(session: &Session, permissions: Data<PermissionData>) -> Self {
-    //    use crate::group::get_group_ids_for_client;
-    //    use crate::session::authenticate_client_by_session;
-    //
-    //    let db = get_db_pool();
-    //    let client = authenticate_client_by_session(session).await;
-    //    let groups = get_group_ids_for_client(db, &client).await;
-    //
-    //    ClientCtxInner {
-    //        client,
-    //        groups,
-    //        permissions,
-    //        ..Default::default()
-    //    }
-    //}
+    /// Pass a Cookie to try and restore a session.
+    pub async fn from_cookie(scylla: Data<ScyllaSession>, cookie: &Cookie<'_>) -> Self {
+        //let groups = get_group_ids_for_client(db, &client).await;
+        match Uuid::parse_str(cookie.value()) {
+            Ok(uuid) => match Visitor::new_from_uuid(scylla, &uuid).await {
+                Ok(visitor) => {
+                    log::debug!("Context::from_cookie visitor: {:?}", &visitor);
+                    Self {
+                        visitor,
+                        ..Default::default()
+                    }
+                }
+                Err(e) => {
+                    log::debug!("Context::from_cookie auth error: {}", e);
+                    Self::default()
+                }
+            },
+            Err(e) => {
+                log::debug!("Context::from_cookie parse error: {}", e);
+                Self::default()
+            }
+        }
+    }
+
+    /// Removed Context from the Extensions jar.
+    pub fn from_extensions(extensions: &mut Extensions) -> Self {
+        match extensions.remove::<Self>() {
+            // Existing record in extensions; pull it and return clone.
+            Some(cbox) => cbox,
+            // No existing record; create and insert it.
+            None => Self::default(),
+        }
+    }
 
     /// Returns a hash unique to each request used for CSP.
     /// See: <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce>
@@ -78,13 +98,6 @@ impl Context {
 
         // Finalize.
         hasher.finalize().to_string()
-    }
-
-    pub fn flash(&mut self, class: Flash, message: &str) {
-        self.messages.push(FlashMessage {
-            class,
-            message: message.to_owned(),
-        })
     }
 
     /// Returns the security nonce from ContextInner.
@@ -118,7 +131,7 @@ impl FromRequest for Context {
 
     /// Create a Self from request parts asynchronously.
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        ready(Ok(Context::default()))
+        ready(Ok(Self::from_extensions(&mut req.extensions_mut())))
     }
 }
 
@@ -163,24 +176,19 @@ where
 
         // Borrows of `req` must be done in a precise way to avoid conflcits. This order is important.
         let (httpreq, payload) = req.into_parts();
-        let session = Session::extract(&httpreq).into_inner();
+        //let session = ActixSession::extract(&httpreq).into_inner();
+        let scylla = httpreq.app_data::<Data<ScyllaSession>>().map(|d| d.clone()); // Clone like this to avoid inheritence issues with next line.
+        let cookie = httpreq.cookie("vf_session");
         let req = ServiceRequest::from_parts(httpreq, payload);
 
         // If we do not have permission data there is no client interface to access.
         Box::pin(async move {
-            //if let Some(perm_arc) = req.app_data::<Data<PermissionData>>() {
-            //    let perm_arc = perm_arc.clone();
-            //
-            //    match session {
-            //        Ok(session) => req.extensions_mut().insert(Data::new(
-            //            ClientCtxInner::from_session(&session, perm_arc).await,
-            //        )),
-            //        Err(err) => {
-            //            log::error!("Unable to extract Session data in middleware: {}", err);
-            //            None
-            //        }
-            //    };
-            //};
+            if let Some(cookie) = &cookie {
+                if let Some(scylla) = scylla {
+                    req.extensions_mut()
+                        .insert(Context::from_cookie(scylla.clone(), cookie).await);
+                }
+            }
 
             svc.call(req).await
         })

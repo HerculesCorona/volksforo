@@ -15,6 +15,7 @@ mod controller;
 mod filters;
 mod middleware;
 mod model;
+mod session;
 mod util;
 
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
@@ -53,7 +54,7 @@ async fn main() -> std::io::Result<()> {
     // https://en.wikipedia.org/wiki/Snowflake_ID
     // https://crates.io/crates/rs-snowflake
     log::info!("Building snowflakes.");
-    util::SNOWFLAKE_BUCKET.set(
+    let _ = util::SNOWFLAKE_BUCKET.set(
         hexafreeze::Generator::new(
             env::var("VF_NODE_ID")
                 .expect("VF_NODE_ID is unset")
