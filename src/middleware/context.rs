@@ -1,4 +1,5 @@
 use super::{Flash, FlashMessage};
+use crate::session::Visitor;
 use actix_session::Session;
 use actix_web::dev::{
     self, Extensions, Payload, Service, ServiceRequest, ServiceResponse, Transform,
@@ -12,18 +13,18 @@ use std::time::{Duration, Instant};
 /// Client context passed to routes.
 #[derive(Debug)]
 pub struct Context {
-    /// User data. Optional. None is a guest user.
-    //pub client: Option<Profile>,
     /// List of user group ids. Guests may receive unregistered/portal roles.
-    //pub groups: Vec<i32>,
-    /// Permission data.
-    //pub permissions: Data<PermissionData>,
+    pub groups: Vec<i32>,
     /// Flash messages.
     pub messages: Vec<FlashMessage>,
     /// Randomly generated string for CSR.
     pub nonce: String,
+    /// Permission data.
+    //pub permissions: Data<PermissionData>,
     /// Time the request started for page load statistics.
     pub request_start: Instant,
+    /// Visitor data.
+    pub visitor: Visitor,
 }
 
 impl Default for Context {
@@ -31,9 +32,9 @@ impl Default for Context {
         Self {
             // Guests and users.
             //permissions: Data::new(PermissionData::default()),
-            //groups: Vec::new(),
+            groups: Vec::new(),
             // Only users.
-            //client: None,
+            visitor: Default::default(),
             // Generally left default.
             messages: Default::default(),
             nonce: Self::nonce(),
@@ -72,16 +73,10 @@ impl Context {
                 .as_bytes(),
         );
 
-        // Hash: Timestamp
-        use std::time::{SystemTime, UNIX_EPOCH};
-        hasher.update(
-            &SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("System clock before 1970. Really?")
-                .as_millis()
-                .to_ne_bytes(),
-        );
+        // Hash: Timestamp in nanoseconds
+        hasher.update(&chrono::Utc::now().timestamp_nanos().to_ne_bytes());
 
+        // Finalize.
         hasher.finalize().to_string()
     }
 
