@@ -5,10 +5,24 @@
     <h1>{{ thread.title }}{% match thread.subtitle %}
         {% when Some with (subtitle) %}<span class="subtitle"> - {{subtitle}}</span>{% when None %}{% endmatch %}</h1>
 
+    {{ paginator.as_html()|safe }}
+
     {% for post in posts %}
     {% let user = users.get(post.id) %}
     {% let post_ugc = ugcs.get(post.id) %}
     {% include "ugc/post.html" %}
     {% endfor %}
+
+    {{ paginator.as_html()|safe }}
+
+    <form action="/threads/{{ thread.id }}/post-reply" method="post" enctype="multipart/form-data">
+        <h2>Post Reply</h2>
+        <textarea name="content" rows="8" cols="80"></textarea>
+        <div>
+            <input type="file" name="attachment" class="attachment-input" />
+            <button class="attachment-upload">Upload</button>
+        </div>
+        <button>Sneed</button>
+    </form>
 </div>
 {% endblock %}

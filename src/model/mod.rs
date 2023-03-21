@@ -8,3 +8,5 @@ pub mod ugc;
 pub use ugc::Ugc;
 pub mod user;
 pub use user::User;
+pub mod user_session;
+pub use user_session::UserSession;

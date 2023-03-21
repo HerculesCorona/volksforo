@@ -1,12 +1,10 @@
 use super::Post;
 use actix_web::web::Data;
 use anyhow::Result;
-use blake3::{self, Hasher};
-use chrono::{DateTime, Duration, Utc};
 use scylla::{FromRow, IntoTypedRows, Session};
 use std::collections::HashMap;
 use tokio::task::JoinSet;
-use uuid::{uuid, Uuid};
+use uuid::Uuid;
 
 #[derive(Debug, FromRow, Clone)]
 pub struct User {
@@ -16,14 +14,6 @@ pub struct User {
     pub email: Option<String>,
     pub password: String,
     pub password_cipher: String,
-}
-
-#[derive(Debug, FromRow, Clone)]
-pub struct UserSession {
-    pub id: Uuid,
-    pub user_id: i64,
-    pub created_at: Duration,
-    pub last_seen_at: Duration,
 }
 
 impl User {
@@ -163,29 +153,6 @@ impl User {
             posts.iter().map(|x| x.id.to_owned()).collect::<Vec<i64>>(),
         )
         .await
-    }
-
-    pub async fn fetch_session(scylla: Data<Session>, uuid: &Uuid) -> Result<Option<UserSession>> {
-        if let Some(rows) = scylla
-            .query(
-                "SELECT
-                    id,
-                    user_id,
-                    created_at,
-                    last_seen_at
-                FROM volksforo.user_sessions
-                WHERE id = ?",
-                (uuid,),
-            )
-            .await?
-            .rows
-        {
-            for row in rows.into_typed::<UserSession>() {
-                return Ok(Some(row?));
-            }
-        }
-
-        Ok(None)
     }
 
     pub async fn insert(&self, scylla: Data<Session>) -> Result<()> {

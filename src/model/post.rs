@@ -1,9 +1,8 @@
-use std::collections::HashMap;
-
 use actix_web::web::Data;
 use anyhow::Result;
 use chrono::Duration;
 use scylla::{FromRow, IntoTypedRows};
+use std::collections::HashMap;
 use tokio::task::JoinSet;
 use uuid::Uuid;
 

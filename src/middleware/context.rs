@@ -1,5 +1,7 @@
 use super::FlashJar;
-use crate::session::Visitor;
+use crate::model::UserSession;
+use crate::session::{self, Visitor};
+use actix_session::Session;
 use actix_web::cookie::Cookie;
 use actix_web::dev::{
     self, Extensions, Payload, Service, ServiceRequest, ServiceResponse, Transform,
@@ -50,7 +52,7 @@ impl Context {
     pub async fn from_cookie(scylla: Data<ScyllaSession>, cookie: &Cookie<'_>) -> Self {
         //let groups = get_group_ids_for_client(db, &client).await;
         match Uuid::parse_str(cookie.value()) {
-            Ok(uuid) => match Visitor::new_from_uuid(scylla, &uuid).await {
+            Ok(uuid) => match Visitor::new_from_uuid(scylla, uuid).await {
                 Ok(visitor) => {
                     log::debug!("Context::from_cookie visitor: {:?}", &visitor);
                     Self {
@@ -185,8 +187,21 @@ where
         Box::pin(async move {
             if let Some(cookie) = &cookie {
                 if let Some(scylla) = scylla {
-                    req.extensions_mut()
-                        .insert(Context::from_cookie(scylla.clone(), cookie).await);
+                    let context = Context::from_cookie(scylla.clone(), cookie).await;
+
+                    if let Some(session_id) = &context.visitor.session_id {
+                        let uuid = session_id.to_owned();
+                        tokio::spawn(async move {
+                            match UserSession::bump_last_seen_at(scylla.clone(), &uuid).await {
+                                Ok(_) => {}
+                                Err(err) => {
+                                    log::error!("Failed to bump last seen at: {}", err);
+                                }
+                            }
+                        });
+                    }
+
+                    req.extensions_mut().insert(context);
                 }
             }
 
