@@ -1,7 +1,6 @@
 use super::FlashJar;
 use crate::model::UserSession;
-use crate::session::{self, Visitor};
-use actix_session::Session;
+use crate::session::Visitor;
 use actix_web::cookie::Cookie;
 use actix_web::dev::{
     self, Extensions, Payload, Service, ServiceRequest, ServiceResponse, Transform,
@@ -179,7 +178,7 @@ where
         // Borrows of `req` must be done in a precise way to avoid conflcits. This order is important.
         let (httpreq, payload) = req.into_parts();
         //let session = ActixSession::extract(&httpreq).into_inner();
-        let scylla = httpreq.app_data::<Data<ScyllaSession>>().map(|d| d.clone()); // Clone like this to avoid inheritence issues with next line.
+        let scylla = httpreq.app_data::<Data<ScyllaSession>>().cloned(); // Clone like this to avoid inheritence issues with next line.
         let cookie = httpreq.cookie("vf_session");
         let req = ServiceRequest::from_parts(httpreq, payload);
 

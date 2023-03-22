@@ -14,12 +14,13 @@ impl std::fmt::Display for FlashMessage {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Flash {
-    ERROR,
-    INFO,
-    WARNING,
-    SUCCESS,
+    Error,
+    Info,
+    Warning,
+    Success,
 }
 
 impl std::fmt::Display for Flash {
@@ -28,16 +29,16 @@ impl std::fmt::Display for Flash {
             f,
             "{}",
             match self {
-                Self::ERROR => "error",
-                Self::INFO => "info",
-                Self::WARNING => "warning",
-                Self::SUCCESS => "success",
+                Self::Error => "error",
+                Self::Info => "info",
+                Self::Warning => "warning",
+                Self::Success => "success",
             }
         )
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FlashJar {
     pub messages: Vec<FlashMessage>,
 }
@@ -48,13 +49,5 @@ impl FlashJar {
             class,
             message: message.to_owned(),
         })
-    }
-}
-
-impl Default for FlashJar {
-    fn default() -> Self {
-        Self {
-            messages: Default::default(),
-        }
     }
 }

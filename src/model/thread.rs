@@ -22,11 +22,9 @@ pub struct Thread {
 impl Thread {
     /// Adds to a thread's view count without blocking.
     pub fn bump_view_count(&self, scylla: Data<Session>) {
-        let nscylla = scylla.to_owned();
         let thread_id = self.id.to_owned();
-
         tokio::spawn(async move {
-            nscylla
+            scylla
                 .query(
                     "UPDATE volksforo.thread_views SET view_count = view_count + 1 WHERE id = ?",
                     (thread_id,),
@@ -146,7 +144,7 @@ impl Thread {
             .into_typed::<(i64, value::Counter)>()
             .collect::<Result<Vec<(i64, value::Counter)>, FromRowError>>()?
             .pop()
-            .map_or(None, |r| Some(r.1 .0)))
+            .map(|r| r.1 .0))
     }
 
     /// Fetches the view count of one thread.
@@ -162,7 +160,7 @@ impl Thread {
             .into_typed::<(i64, value::Counter)>()
             .collect::<Result<Vec<(i64, value::Counter)>, FromRowError>>()?
             .pop()
-            .map_or(None, |r| Some(r.1 .0)))
+            .map(|r| r.1 .0))
     }
 
     /// Fetches the view count of many threads.

@@ -24,7 +24,7 @@ impl Ugc {
         content: String,
     ) -> Result<Self> {
         let uuid = Uuid::new_v4();
-        let user_id = visitor.user.as_ref().map_or(None, |u| Some(u.id));
+        let user_id = visitor.user.as_ref().map(|u| Some(u.id));
         let timestamp = chrono::Utc::now().timestamp_millis();
 
         scylla

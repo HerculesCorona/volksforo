@@ -53,18 +53,18 @@ pub async fn put_login(
     let LoginForm { username, password } = form.0;
 
     if let (Some(username), Some(password)) = (&username, &password) {
-        match User::fetch_by_username(scylla.to_owned(), normalize_username(&username))
+        match User::fetch_by_username(scylla.to_owned(), normalize_username(username))
             .await
-            .map_err(|e| error::ErrorInternalServerError(e))?
+            .map_err(error::ErrorInternalServerError)?
         {
             Some(user) => {
-                if argon2_verify(&user.password, &password)
-                    .map_err(|e| error::ErrorInternalServerError(e))?
+                if argon2_verify(&user.password, password)
+                    .map_err(error::ErrorInternalServerError)?
                 {
                     let session_token = user
                         .create_session(scylla)
                         .await
-                        .map_err(|e| error::ErrorInternalServerError(e))?;
+                        .map_err(error::ErrorInternalServerError)?;
 
                     let mut http_resp = super::GenericTemplate {
                         context,
@@ -86,17 +86,17 @@ pub async fn put_login(
                 } else {
                     context
                         .jar
-                        .flash(Flash::ERROR, "Username or password is incorrect.");
+                        .flash(Flash::Error, "Username or password is incorrect.");
                 }
             }
             None => {
                 context
                     .jar
-                    .flash(Flash::ERROR, "Username or password is incorrect.");
+                    .flash(Flash::Error, "Username or password is incorrect.");
             }
         }
     } else {
-        context.jar.flash(Flash::ERROR, "All fields are mandatory.");
+        context.jar.flash(Flash::Error, "All fields are mandatory.");
     }
 
     Ok(LoginTemplate {
@@ -127,15 +127,15 @@ pub async fn put_register(
 
     if username.is_none() {
         valid = false;
-        context.jar.flash(Flash::ERROR, "A username is mandatory.");
+        context.jar.flash(Flash::Error, "A username is mandatory.");
     } else if password.is_none() {
         valid = false;
-        context.jar.flash(Flash::ERROR, "a password is mandatory.");
+        context.jar.flash(Flash::Error, "a password is mandatory.");
     } else if password != password_confirm {
         valid = false;
         context
             .jar
-            .flash(Flash::ERROR, "Password fields do not match.");
+            .flash(Flash::Error, "Password fields do not match.");
     }
 
     if valid {
@@ -146,12 +146,12 @@ pub async fn put_register(
             password.to_owned().unwrap(),
         )
         .await
-        .map_err(|e| error::ErrorInternalServerError(e))?;
+        .map_err(error::ErrorInternalServerError)?;
 
         let session_token = user
             .create_session(scylla)
             .await
-            .map_err(|e| error::ErrorInternalServerError(e))?;
+            .map_err(error::ErrorInternalServerError)?;
 
         let mut http_resp = super::GenericTemplate {
             context,

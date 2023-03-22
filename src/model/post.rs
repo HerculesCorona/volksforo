@@ -120,14 +120,7 @@ impl Post {
                 positions.insert(pos.post_id, pos.position);
             }
 
-            let posts = Self::fetch_many(
-                scylla,
-                positions
-                    .iter()
-                    .map(|(post_id, _)| post_id.to_owned())
-                    .collect(),
-            )
-            .await?;
+            let posts = Self::fetch_many(scylla, positions.keys().copied().collect()).await?;
 
             Ok((posts, positions))
         } else {

@@ -13,7 +13,7 @@ pub fn argon2_hash(password: &str) -> Result<String> {
         std::env::var("VF_SALT")
             .expect("VF_SALT is unset")
             .as_bytes(),
-        &ARGON2_CONFIG.get().expect("ARGON2_CONFIG is unset"),
+        ARGON2_CONFIG.get().expect("ARGON2_CONFIG is unset"),
     )?)
 }
 

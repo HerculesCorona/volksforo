@@ -53,9 +53,9 @@ pub async fn get_thread_or_error(
     match Thread::fetch(scylla, thread_id).await {
         Ok(result) => match result {
             Some(thread) => Ok(thread),
-            None => return Err(error::ErrorNotFound("Thread Not Found")),
+            None => Err(error::ErrorNotFound("Thread Not Found")),
         },
-        Err(err) => return Err(error::ErrorInternalServerError(err)),
+        Err(err) => Err(error::ErrorInternalServerError(err)),
     }
 }
 
@@ -78,10 +78,7 @@ async fn render_thread_page(
                 None => return Err(error::ErrorNotFound("Thread Not Found")),
             },
             posts,
-            match reply_count {
-                Some(reply_count) => reply_count,
-                None => 0,
-            },
+            reply_count.unwrap_or(0),
         ),
         (Ok(_), Err(err), Ok(_)) => return Err(error::ErrorInternalServerError(err)),
         (Err(err), Ok(_), Ok(_)) => return Err(error::ErrorInternalServerError(err)),
@@ -135,21 +132,21 @@ async fn put_reply(
         form.content.as_ref().expect("No post").0.to_string(),
     ) // TODO: Sanitize
     .await
-    .map_err(|err| error::ErrorInternalServerError(err))?;
+    .map_err(error::ErrorInternalServerError)?;
     let snowflake_id = crate::util::snowflake_id()
         .await
-        .map_err(|err| error::ErrorInternalServerError(err))?;
+        .map_err(error::ErrorInternalServerError)?;
     let post = Post {
         id: snowflake_id,
-        thread_id: thread_id,
-        created_at: ugc.created_at.clone(),
+        thread_id,
+        created_at: ugc.created_at,
         user_id: context.visitor.user.as_ref().map(|u| u.id),
-        ugc_id: ugc.id.clone(),
+        ugc_id: ugc.id,
     };
     let pos = post
         .insert(scylla.clone())
         .await
-        .map_err(|err| error::ErrorInternalServerError(err))?;
+        .map_err(error::ErrorInternalServerError)?;
 
     let page = get_page_for_pos(pos);
     if page > 1 {

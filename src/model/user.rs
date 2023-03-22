@@ -1,7 +1,7 @@
 use super::Post;
 use actix_web::web::Data;
 use anyhow::Result;
-use scylla::{FromRow, IntoTypedRows, Session};
+use scylla::{cql_to_rust::FromRowError, FromRow, IntoTypedRows, Session};
 use std::collections::HashMap;
 use tokio::task::JoinSet;
 use uuid::Uuid;
@@ -54,7 +54,7 @@ impl User {
     }
 
     pub async fn fetch(scylla: Data<Session>, id: i64) -> Result<Option<Self>> {
-        if let Some(rows) = scylla
+        Ok(scylla
             .query(
                 "SELECT
                     id,
@@ -69,20 +69,17 @@ impl User {
             )
             .await?
             .rows
-        {
-            for row in rows.into_typed::<Self>() {
-                return Ok(Some(row?));
-            }
-        }
-
-        Ok(None)
+            .unwrap_or_default()
+            .into_typed::<Self>()
+            .collect::<Result<Vec<Self>, FromRowError>>()?
+            .pop())
     }
 
     pub async fn fetch_by_username(
         scylla: Data<Session>,
         username: String,
     ) -> Result<Option<Self>> {
-        if let Some(rows) = scylla
+        Ok(scylla
             .query(
                 "SELECT
                     id,
@@ -97,13 +94,10 @@ impl User {
             )
             .await?
             .rows
-        {
-            for row in rows.into_typed::<Self>() {
-                return Ok(Some(row?));
-            }
-        }
-
-        Ok(None)
+            .unwrap_or_default()
+            .into_typed::<Self>()
+            .collect::<Result<Vec<Self>, FromRowError>>()?
+            .pop())
     }
 
     pub async fn fetch_many(scylla: Data<Session>, ids: Vec<i64>) -> Result<HashMap<i64, Self>> {
@@ -146,7 +140,7 @@ impl User {
 
     pub async fn fetch_many_post_authors(
         scylla: Data<Session>,
-        posts: &Vec<Post>,
+        posts: &[Post],
     ) -> Result<HashMap<i64, Self>> {
         Self::fetch_many(
             scylla.clone(),

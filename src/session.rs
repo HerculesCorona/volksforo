@@ -5,7 +5,7 @@ use scylla::Session as ScyllaSession;
 use uuid::Uuid;
 
 /// Representation of the current web user, which may or may not be signed in.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Visitor {
     pub session_id: Option<Uuid>,
     pub user: Option<User>,
@@ -22,15 +22,6 @@ impl Visitor {
                 log::debug!("Requested session not found: {}", uuid);
                 Ok(Self::default())
             }
-        }
-    }
-}
-
-impl Default for Visitor {
-    fn default() -> Self {
-        Self {
-            session_id: None,
-            user: None,
         }
     }
 }
