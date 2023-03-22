@@ -2,16 +2,17 @@ use crate::filters;
 use crate::middleware::Context;
 use crate::model::{Node, Post, Thread, Ugc, User};
 use crate::util::{Paginator, PaginatorToHtml};
-use actix_web::web::{Data, Form, Path};
-use actix_web::{error, get, post, Responder};
+use actix_multipart::form::text::Text;
+use actix_multipart::form::MultipartForm;
+use actix_web::web::{Data, Form, Path, Redirect};
+use actix_web::{error, get, post, HttpRequest, HttpResponse, Responder};
 use askama::Template;
 use scylla::Session;
-use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Default, MultipartForm)]
 pub struct ReplyForm {
-    post: Option<String>,
+    content: Option<Text<String>>,
 }
 
 #[derive(Template)]
@@ -21,14 +22,16 @@ pub struct ThreadTemplate {
     pub node: Node,
     pub thread: Thread,
     pub posts: Vec<Post>,
-    pub positions: HashMap<i64, i32>,
+    pub positions: HashMap<i64, i64>,
     pub ugcs: HashMap<i64, Ugc>,
     pub users: HashMap<i64, User>,
     pub paginator: Paginator,
 }
 
 pub(super) fn configure(conf: &mut actix_web::web::ServiceConfig) {
-    conf.service(view_thread);
+    conf.service(put_reply)
+        .service(view_thread)
+        .service(view_thread_page);
 }
 
 // TODO: Dynamic page sizing.
@@ -43,20 +46,26 @@ pub fn get_pages_in_thread(cnt: i64) -> i64 {
     ((std::cmp::max(1, cnt) - 1) / POSTS_PER_PAGE) + 1
 }
 
+pub async fn get_thread_or_error(
+    scylla: Data<Session>,
+    thread_id: &i64,
+) -> actix_web::Result<Thread> {
+    match Thread::fetch(scylla, thread_id).await {
+        Ok(result) => match result {
+            Some(thread) => Ok(thread),
+            None => return Err(error::ErrorNotFound("Thread Not Found")),
+        },
+        Err(err) => return Err(error::ErrorInternalServerError(err)),
+    }
+}
+
 async fn render_thread_page(
     context: Context,
     scylla: Data<Session>,
     thread_id: i64,
     page: i64,
 ) -> actix_web::Result<impl Responder> {
-    let thread = match Thread::fetch(scylla.clone(), thread_id).await {
-        Ok(result) => match result {
-            Some(thread) => thread,
-            None => return Err(error::ErrorNotFound("Thread Not Found")),
-        },
-        Err(err) => return Err(error::ErrorInternalServerError(err)),
-    };
-
+    let thread = get_thread_or_error(scylla.clone(), &thread_id).await?;
     let (node, (posts, positions), reply_count) = match tokio::join!(
         Node::fetch(scylla.clone(), thread.node_id),
         Post::fetch_thread(scylla.clone(), thread_id, 1),
@@ -110,23 +119,44 @@ async fn render_thread_page(
     })
 }
 
-//#[post("/threads/{thread_id}/post-reply")]
-//async fn put_reply(
-//    path: Path<i64>,
-//    context: Context,
-//    scylla: Data<Session>,
-//    form: Form<ReplyForm>,
-//) -> actix_web::Result<impl Responder> {
-//    let thread = match Thread::fetch(scylla.clone(), thread_id).await {
-//        Ok(result) => match result {
-//            Some(thread) => thread,
-//            None => return Err(error::ErrorNotFound("Thread Not Found")),
-//        },
-//        Err(err) => return Err(error::ErrorInternalServerError(err)),
-//    };
-//
-//
-//}
+#[post("/threads/{thread_id}/post-reply")]
+async fn put_reply(
+    path: Path<i64>,
+    context: Context,
+    scylla: Data<Session>,
+    form: MultipartForm<ReplyForm>,
+) -> actix_web::Result<impl Responder> {
+    let thread_id = path.into_inner();
+    let thread = get_thread_or_error(scylla.clone(), &thread_id).await?;
+    let ugc = Ugc::create_for_visitor(
+        scylla.clone(),
+        &context.visitor,
+        form.content.as_ref().expect("No post").0.to_string(),
+    ) // TODO: Sanitize
+    .await
+    .map_err(|err| error::ErrorInternalServerError(err))?;
+    let snowflake_id = crate::util::snowflake_id()
+        .await
+        .map_err(|err| error::ErrorInternalServerError(err))?;
+    let post = Post {
+        id: snowflake_id,
+        thread_id: thread_id,
+        created_at: ugc.created_at.clone(),
+        user_id: context.visitor.user.as_ref().map(|u| u.id),
+        ugc_id: ugc.id.clone(),
+    };
+    let pos = post
+        .insert(scylla.clone())
+        .await
+        .map_err(|err| error::ErrorInternalServerError(err))?;
+
+    let page = get_page_for_pos(pos);
+    if page > 1 {
+        Ok(Redirect::to(format!("/threads/{}/page-{}", thread_id, page)).temporary())
+    } else {
+        Ok(Redirect::to(format!("/threads/{}/", thread_id)).temporary())
+    }
+}
 
 #[get("/threads/{thread_id}/")]
 async fn view_thread(

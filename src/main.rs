@@ -12,6 +12,7 @@
 extern crate log;
 
 mod controller;
+mod error;
 mod filters;
 mod middleware;
 mod model;
@@ -25,6 +26,7 @@ use actix_web::middleware::{ErrorHandlers, Logger};
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use env_logger::Env;
+pub use error::Error;
 use middleware::context::Context;
 use rand::{distributions::Alphanumeric, Rng};
 use scylla::SessionBuilder;

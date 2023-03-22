@@ -96,10 +96,10 @@ INSERT INTO posts (id, thread_id, user_id, created_at, ugc_id) VALUES (7, 1, 1, 
 DROP TABLE IF EXISTS post_positions;
 CREATE TABLE post_positions (
     thread_id bigint,
-    position int,
+    position bigint,
     post_id bigint,
-    PRIMARY KEY ((thread_id, position), post_id)
-) WITH CLUSTERING ORDER BY (post_id ASC);
+    PRIMARY KEY (thread_id, position, post_id)
+) WITH CLUSTERING ORDER BY (position ASC, post_id ASC);
 
 INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 1, 1);
 INSERT INTO post_positions (thread_id, position, post_id) VALUES (1, 2, 2);

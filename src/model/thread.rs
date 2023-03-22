@@ -36,7 +36,7 @@ impl Thread {
     }
 
     ///  Returns a single thread.
-    pub async fn fetch(scylla: Data<Session>, thread_id: i64) -> Result<Option<Self>> {
+    pub async fn fetch(scylla: Data<Session>, thread_id: &i64) -> Result<Option<Self>> {
         if let Some(rows) = scylla
             .query(
                 "SELECT
@@ -103,24 +103,6 @@ impl Thread {
         Ok(Default::default())
     }
 
-    /// Fetches the reply count of a single thread.
-    pub async fn fetch_reply_count(scylla: Data<Session>, thread_id: i64) -> Result<Option<i64>> {
-        if let Some(rows) = scylla
-            .query(
-                "SELECT id, reply_count FROM volksforo.thread_replies WHERE id = ?",
-                (thread_id,),
-            )
-            .await?
-            .rows
-        {
-            for row in rows.into_typed::<(i64, value::Counter)>() {
-                return Ok(Some(row?.1 .0));
-            }
-        }
-
-        Ok(None)
-    }
-
     /// Fetches the reply count of many threads.
     pub async fn fetch_many_reply_count(
         scylla: Data<Session>,
@@ -151,6 +133,24 @@ impl Thread {
         }
 
         Ok(counters)
+    }
+
+    /// Fetches the reply count of a single thread.
+    pub async fn fetch_reply_count(scylla: Data<Session>, thread_id: i64) -> Result<Option<i64>> {
+        if let Some(rows) = scylla
+            .query(
+                "SELECT id, reply_count FROM volksforo.thread_replies WHERE id = ?",
+                (thread_id,),
+            )
+            .await?
+            .rows
+        {
+            for row in rows.into_typed::<(i64, value::Counter)>() {
+                return Ok(Some(row?.1 .0));
+            }
+        }
+
+        Ok(None)
     }
 
     /// Fetches the view count of one thread.
