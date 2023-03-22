@@ -1,6 +1,6 @@
 use actix_web::web::Data;
 use anyhow::Result;
-use scylla::{FromRow, IntoTypedRows, Session};
+use scylla::{cql_to_rust::FromRowError, FromRow, IntoTypedRows, Session};
 
 #[derive(Debug, FromRow)]
 pub struct Node {
@@ -12,20 +12,17 @@ pub struct Node {
 
 impl Node {
     pub async fn fetch(scylla: Data<Session>, node_id: i64) -> Result<Option<Self>> {
-        if let Some(rows) = scylla
+        Ok(scylla
             .query(
                 "SELECT id, display_order, title, description FROM volksforo.nodes WHERE id = ?",
                 (node_id,),
             )
             .await?
             .rows
-        {
-            for row in rows.into_typed::<Self>() {
-                return Ok(Some(row?));
-            }
-        }
-
-        Ok(None)
+            .unwrap_or_default()
+            .into_typed::<Self>()
+            .collect::<Result<Vec<Self>, FromRowError>>()?
+            .pop())
     }
 
     pub async fn fetch_all(scylla: Data<Session>) -> Result<Vec<Self>> {

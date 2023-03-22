@@ -4,8 +4,8 @@ use crate::model::{Node, Post, Thread, Ugc, User};
 use crate::util::{Paginator, PaginatorToHtml};
 use actix_multipart::form::text::Text;
 use actix_multipart::form::MultipartForm;
-use actix_web::web::{Data, Form, Path, Redirect};
-use actix_web::{error, get, post, HttpRequest, HttpResponse, Responder};
+use actix_web::web::{Data, Path, Redirect};
+use actix_web::{error, get, post, HttpRequest, Responder};
 use askama::Template;
 use scylla::Session;
 use std::collections::HashMap;
@@ -66,6 +66,7 @@ async fn render_thread_page(
     page: i64,
 ) -> actix_web::Result<impl Responder> {
     let thread = get_thread_or_error(scylla.clone(), &thread_id).await?;
+
     let (node, (posts, positions), reply_count) = match tokio::join!(
         Node::fetch(scylla.clone(), thread.node_id),
         Post::fetch_thread(scylla.clone(), thread_id, 1),
@@ -152,9 +153,9 @@ async fn put_reply(
 
     let page = get_page_for_pos(pos);
     if page > 1 {
-        Ok(Redirect::to(format!("/threads/{}/page-{}", thread_id, page)).temporary())
+        Ok(Redirect::to(format!("/threads/{}/page-{}", thread.id, page)).see_other())
     } else {
-        Ok(Redirect::to(format!("/threads/{}/", thread_id)).temporary())
+        Ok(Redirect::to(format!("/threads/{}/", thread.id)).see_other())
     }
 }
 
@@ -170,10 +171,13 @@ async fn view_thread(
 
 #[get("/threads/{thread_id}/page-{page}")]
 async fn view_thread_page(
+    req: HttpRequest,
     path: Path<(i64, i64)>,
     context: Context,
     scylla: Data<Session>,
 ) -> actix_web::Result<impl Responder> {
     let (thread_id, page) = path.into_inner();
-    render_thread_page(context, scylla, thread_id, page).await
+    Ok(render_thread_page(context, scylla, thread_id, page)
+        .await?
+        .respond_to(&req))
 }

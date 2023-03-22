@@ -1,13 +1,15 @@
 use crate::filters;
 use crate::middleware::context::Context;
 use crate::model::{Node, Thread};
-use actix_web::web::{Data, Path};
+use actix_web::web::{Data, Path, Redirect};
 use actix_web::{error, get, Responder};
 use askama::Template;
 use scylla::Session;
 
 pub(super) fn configure(conf: &mut actix_web::web::ServiceConfig) {
-    conf.service(view_forum).service(view_index);
+    conf.service(view_forum)
+        .service(view_forum_index)
+        .service(view_index);
 }
 
 #[derive(Template)]
@@ -74,6 +76,11 @@ async fn view_forum(
             })
             .collect(),
     })
+}
+
+#[get("/forums/")]
+async fn view_forum_index() -> impl Responder {
+    Redirect::to("/").see_other()
 }
 
 #[get("/")]

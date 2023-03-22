@@ -1,10 +1,7 @@
-use super::Post;
 use actix_web::web::Data;
 use anyhow::Result;
 use chrono::Duration;
-use scylla::{FromRow, IntoTypedRows, Session};
-use std::collections::HashMap;
-use tokio::task::JoinSet;
+use scylla::{cql_to_rust::FromRowError, FromRow, IntoTypedRows, Session};
 use uuid::Uuid;
 
 #[derive(Debug, FromRow, Clone)]
@@ -31,25 +28,23 @@ impl UserSession {
     }
 
     pub async fn fetch(scylla: Data<Session>, uuid: &Uuid) -> Result<Option<Self>> {
-        if let Some(rows) = scylla
+        Ok(scylla
             .query(
-                "SELECT
-                    id,
-                    user_id,
-                    created_at,
-                    last_seen_at
-                FROM volksforo.user_sessions
-                WHERE id = ?",
+                r#"SELECT
+                        id,
+                        user_id,
+                        created_at,
+                        last_seen_at
+                    FROM volksforo.user_sessions
+                    WHERE id = ?
+                ;"#,
                 (uuid,),
             )
             .await?
             .rows
-        {
-            for row in rows.into_typed::<Self>() {
-                return Ok(Some(row?));
-            }
-        }
-
-        Ok(None)
+            .unwrap_or_default()
+            .into_typed::<Self>()
+            .collect::<Result<Vec<Self>, FromRowError>>()?
+            .pop())
     }
 }

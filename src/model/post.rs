@@ -27,24 +27,27 @@ pub struct PostPosition {
 }
 
 impl Post {
-    pub async fn fetch(scylla: Data<scylla::Session>) -> Result<Vec<Self>> {
-        if let Some(rows) = scylla
+    pub async fn fetch(scylla: Data<scylla::Session>, post_id: i64) -> Result<Option<Self>> {
+        Ok(scylla
             .query(
-                "SELECT id, thread_id, created_at, user_id, ugc_id FROM volksforo.posts",
-                &[],
+                r#"SELECT
+                    id,
+                    thread_id,
+                    created_at,
+                    user_id,
+                    ugc_id
+                FROM volksforo.posts
+                WHERE
+                    post_id ?
+                ;"#,
+                (post_id,),
             )
             .await?
             .rows
-        {
-            let mut result = Vec::with_capacity(rows.len());
-            for row in rows.into_typed::<Self>() {
-                let post = row?;
-                result.insert(result.len(), post);
-            }
-            Ok(result)
-        } else {
-            Ok(Vec::new())
-        }
+            .unwrap_or_default()
+            .into_typed::<Self>()
+            .collect::<Result<Vec<Self>, FromRowError>>()?
+            .pop())
     }
 
     pub async fn fetch_many(
@@ -65,13 +68,13 @@ impl Post {
                 nscylla
                     .query(
                         r#"SELECT
-                            id,
-                            thread_id,
-                            created_at,
-                            user_id,
-                            ugc_id
-                        FROM volksforo.posts
-                        WHERE id = ?
+                                id,
+                                thread_id,
+                                created_at,
+                                user_id,
+                                ugc_id
+                            FROM volksforo.posts
+                            WHERE id = ?
                         ;"#,
                         (post_id,),
                     )
@@ -79,7 +82,7 @@ impl Post {
             });
         }
 
-        let mut posts = Vec::<Post>::with_capacity(queries.len() * 2);
+        let mut posts = Vec::with_capacity(queries.len() * 2);
         while let Some(result) = queries.join_next().await {
             if let Some(rows) = result??.rows {
                 for row in rows.into_typed::<Self>() {
@@ -159,7 +162,7 @@ impl Post {
                 post_id,
                 position
             )
-            VALUES(?, ?, ?);"#,
+            VALUES (?, ?, ?);"#,
         );
         ins_pos.set_consistency(Consistency::One);
         ins_pos.set_serial_consistency(Some(SerialConsistency::Serial));
@@ -172,7 +175,7 @@ impl Post {
                 user_id,
                 ugc_id
             )
-            VALUES(?, ?, ?, ?, ?);"#,
+            VALUES (?, ?, ?, ?, ?);"#,
         );
 
         match tokio::join!(
