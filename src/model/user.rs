@@ -138,13 +138,18 @@ impl User {
         Ok(models)
     }
 
+    /// Returns a map of author ids to user data.
     pub async fn fetch_many_post_authors(
         scylla: Data<Session>,
         posts: &[Post],
     ) -> Result<HashMap<i64, Self>> {
         Self::fetch_many(
             scylla.clone(),
-            posts.iter().map(|x| x.id.to_owned()).collect::<Vec<i64>>(),
+            posts
+                .iter()
+                .map(|x| x.user_id)
+                .flatten()
+                .collect::<Vec<i64>>(),
         )
         .await
     }

@@ -174,7 +174,28 @@ async fn view_thread_page(
     scylla: Data<Session>,
 ) -> actix_web::Result<impl Responder> {
     let (thread_id, page) = path.into_inner();
-    Ok(render_thread_page(context, scylla, thread_id, page)
-        .await?
-        .respond_to(&req))
+    let replies = Thread::fetch_reply_count(scylla.clone(), thread_id)
+        .await
+        .map_err(error::ErrorInternalServerError)?
+        .unwrap_or_default();
+    let max_page = get_page_for_pos(replies);
+
+    if page <= 1 || max_page <= 1 {
+        Ok(Redirect::to(format!("/threads/{}/", thread_id))
+            .see_other()
+            .respond_to(&req)
+            .map_into_left_body())
+    } else if max_page < page {
+        Ok(
+            Redirect::to(format!("/threads/{}/page-{}", thread_id, max_page))
+                .see_other()
+                .respond_to(&req)
+                .map_into_left_body(),
+        )
+    } else {
+        Ok(render_thread_page(context, scylla, thread_id, page)
+            .await?
+            .respond_to(&req)
+            .map_into_right_body())
+    }
 }
