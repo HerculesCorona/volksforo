@@ -6,6 +6,38 @@ USE volksforo;
 
 
 --
+-- Attachments
+--
+DROP TABLE IF EXISTS attachments;
+CREATE TABLE attachments (
+    hash text PRIMARY KEY, -- scylla devs text primary keys are AOK because of their hashing algo
+    first_seen_at timestamp,
+    last_seen_at timestamp,
+    filesize bigint,
+    mime text,
+    PRIMARY KEY (hash)
+);
+
+DROP TABLE IF EXISTS attachment_views;
+CREATE TABLE attachment_views (
+    hash text PRIMARY KEY,
+    view_count counter
+);
+
+DROP TABLE IF EXISTS attachment_thumbnails;
+CREATE TABLE attachment_thumbnails (
+    attachment_hash text PRIMARY KEY,
+    thumbnail_hash text,
+    dimension: tuple<int, int>
+);
+
+DROP TABLE IF EXISTS post_attachments;
+CREATE TABLE post_attachments (
+    post_id bigint PRIMARY KEY,
+    attachment_hash text,
+);
+
+--
 -- Nodes
 --
 DROP TABLE IF EXISTS nodes;

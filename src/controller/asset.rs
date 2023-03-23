@@ -1,9 +1,29 @@
+use crate::middleware::Context;
 use actix_files::NamedFile;
-use actix_web::{error, get, Error, HttpRequest};
+use actix_web::{error, get, post, Error, HttpRequest, Responder, Result};
+use askama::Template;
 use std::path::PathBuf;
 
 pub(super) fn configure(conf: &mut actix_web::web::ServiceConfig) {
-    conf.service(view_public_file);
+    conf.service(get_attachment_debug_form)
+        .service(put_attachment)
+        .service(view_public_file);
+}
+
+#[derive(Template)]
+#[template(path = "attachment/upload.html")]
+pub struct AttachmentDebugTemplate {
+    pub context: Context,
+}
+
+#[get("/attachments/upload")]
+async fn get_attachment_debug_form() -> Result<impl Responder> {
+    Ok("OK")
+}
+
+#[post("/attachments/upload")]
+async fn put_attachment() -> Result<impl Responder> {
+    Ok("OK")
 }
 
 /// Dynamically access public files through the webserver.

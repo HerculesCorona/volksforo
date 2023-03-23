@@ -25,7 +25,9 @@ mod tests {
     fn test_timestamp() {
         // Formatting errors cause very vague panics that shut down the entire program.
         // NaiveDateTime does NOT have a concept of timezones and %z/%Z cause a panic.
-        let d = Duration::seconds(1678983586);
-        println!("{}", duration_timestamp(&d).unwrap());
+        assert_eq!(
+            duration_timestamp(&Duration::seconds(1678983586)).unwrap(),
+            r#"<time datetime="2023-03-16T16:19:46+0000" data-timestamp="1678983586" title="Mar 16, 2023 at  4:19 PM UTC">Mar 16, 2023 at  4:19 PM UTC</time>"#
+        );
     }
 }

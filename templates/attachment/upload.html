@@ -1,0 +1,12 @@
+{% extends "container/public.html" %}
+
+{% block content %}
+<div class="thread">
+    <h1>Attachment Debug Form</h1>
+
+    <form action="/attachments/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="attachment" class="attachment-input" />
+        <button class="attachment-upload">Upload</button>
+    </form>
+</div>
+{% endblock %}

@@ -26,6 +26,9 @@ A traditional web forum built in Rust with modern technology to be fast, secure,
  - S3 Storage
    + Any S3-compatible storage API for attachments.
    + Suggested to use [MinIO](https://min.io/) (FOSS + Self-Hosted)
+ - FFMPEG
+   + Linuxchads may simply install ffmpeg through their package manager.
+   + Windows users should use the [MSVC toolchain](https://rust-lang.github.io/rustup/installation/windows.html), then install [ffmpeg](https://trac.ffmpeg.org/wiki/CompilationGuide/vcpkg) via [vcpkg](https://github.com/microsoft/vcpkg) and [LLVM via Choco](https://community.chocolatey.org/packages/llvm#files).
  - node and webpack
    + Install [npm](https://nodejs.org/en/download/).
    + Run `npm install` from the root directory to install node dependencies.

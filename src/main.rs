@@ -13,11 +13,15 @@ extern crate log;
 
 mod controller;
 mod error;
+mod filesystem;
 mod filters;
 mod middleware;
 mod model;
 mod session;
 mod util;
+
+#[cfg(test)]
+mod test;
 
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::cookie::Key;
@@ -38,7 +42,7 @@ async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
     env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
-    log::info!("𝖁𝖔𝖑𝖐𝖘𝖋𝖔𝖗𝖔");
+    println!("𝖁𝖔𝖑𝖐𝖘𝖋𝖔𝖗𝖔");
 
     // Build Scylla connection
     log::info!("Connecting to Scylla.");
