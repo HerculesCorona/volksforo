@@ -27,8 +27,14 @@ A traditional web forum built in Rust with modern technology to be fast, secure,
    + Any S3-compatible storage API for attachments.
    + Suggested to use [MinIO](https://min.io/) (FOSS + Self-Hosted)
  - FFMPEG
-   + Linuxchads may simply install ffmpeg through their package manager.
-   + Windows users should use the [MSVC toolchain](https://rust-lang.github.io/rustup/installation/windows.html), then install [ffmpeg](https://trac.ffmpeg.org/wiki/CompilationGuide/vcpkg) via [vcpkg](https://github.com/microsoft/vcpkg) and [LLVM via Choco](https://community.chocolatey.org/packages/llvm#files).
+   + Linuxchads may simply install ffmpeg through their package manager and drink a lemonade.
+   + Windows users need to set up bindings for Clang and FFMPEG. Try the following:
+     1. Follow the [Rust for Windows guide](https://learn.microsoft.com/en-us/windows/dev-environment/rust/setup).
+     2. Install the [MSVC Rust toolchain](https://rust-lang.github.io/rustup/installation/windows.html).
+     3. Install via [vcpkg](https://github.com/microsoft/vcpkg) the [ffmpeg](https://trac.ffmpeg.org/wiki/CompilationGuide/vcpkg) and [LLVM](https://learn.microsoft.com/en-us/vcpkg/users/examples/selecting-llvm-features). Be sure to install use the right vcpkg triplets (probably the x64 variants, which are NOT default on x64 systems!).
+     4. Completely close down VS Code, PowerShell and other command interfaces, and run `cargo clean`.
+     5. Run `ls env:` in PS and ensure that `LIBCLANG_PATH` is correctly set to the _directory_ that contains `libclang.dll`. For me, this was `C:\dev\vcpkg\installed\x64-windows-static-md\bin`.
+     6. Say three Hail Marys, two Our Fathers, and run `cargo build`.
  - node and webpack
    + Install [npm](https://nodejs.org/en/download/).
    + Run `npm install` from the root directory to install node dependencies.
